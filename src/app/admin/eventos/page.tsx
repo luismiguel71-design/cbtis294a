@@ -11,6 +11,8 @@ import Image from 'next/image';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { getCurrentUser } from '@/lib/firebase/auth';
+import { uploadFile } from '@/lib/firebase/storage';
+import { Camera, Image as ImageIcon, Link as LinkIcon, Trash2, Edit2, Plus, Upload, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -107,6 +109,30 @@ export default function AdminEventosPage() {
   const fetchEvents = async () => {
     const eventsFromDb = await getEvents();
     setEvents(eventsFromDb);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsSubmitting(true);
+    try {
+      const path = `events/${Date.now()}_${file.name}`;
+      const url = await uploadFile(file, path);
+      form.setValue('imageUrl', url);
+      toast({
+        title: "Imagen cargada",
+        description: "La fotografía se ha subido correctamente.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error de carga",
+        description: error.message,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   async function onSubmit(data: EventFormValues) {
@@ -287,19 +313,67 @@ export default function AdminEventosPage() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="imageUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL de la Imagen</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://picsum.photos/seed/..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Imagen del Evento</FormLabel>
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                           <FormControl className="flex-1">
+                            <Input placeholder="https://..." {...field} />
+                          </FormControl>
+                          <div className="relative">
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              id="event-image-upload"
+                              onChange={handleFileChange}
+                              disabled={isSubmitting}
+                            />
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="icon" 
+                              asChild
+                              className={isSubmitting ? "opacity-50 cursor-not-allowed" : ""}
+                            >
+                              <label htmlFor="event-image-upload" className="cursor-pointer">
+                                <Upload className="h-4 w-4" />
+                              </label>
+                            </Button>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground italic">Pega una URL o sube un archivo directamente.</p>
+                        
+                        {field.value && (
+                          <div className="relative h-40 w-full rounded-lg overflow-hidden border bg-muted">
+                            <Image 
+                              src={field.value} 
+                              alt="Previsualización" 
+                              fill 
+                              className="object-cover"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2 h-7 w-7"
+                              onClick={() => form.setValue('imageUrl', '')}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <DialogFooter>
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

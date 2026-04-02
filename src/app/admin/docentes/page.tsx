@@ -4,7 +4,8 @@ import { User } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, UserPlus, Mail, Briefcase, Trash2, Edit2 } from 'lucide-react';
+import { Loader2, UserPlus, Mail, Briefcase, Trash2, Edit2, Upload, X } from 'lucide-react';
+import { uploadFile } from '@/lib/firebase/storage';
 import { getDocentes } from '@/lib/firebase/firestore';
 import { Docente } from '@/lib/types';
 import Image from 'next/image';
@@ -117,6 +118,30 @@ export default function AdminDocentesPage() {
   const fetchDocentes = async () => {
     const data = await getDocentes();
     setDocentes(data);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsSubmitting(true);
+    try {
+      const path = `teachers/${Date.now()}_${file.name}`;
+      const url = await uploadFile(file, path);
+      form.setValue('imageUrl', url);
+      toast({
+        title: "Imagen cargada",
+        description: "La fotografía del docente se ha subido correctamente.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error de carga",
+        description: error.message,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   async function onSubmit(data: DocenteFormValues) {
@@ -306,8 +331,55 @@ export default function AdminDocentesPage() {
                 name="imageUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>URL de Fotografía (Opcional)</FormLabel>
-                    <FormControl><Input placeholder="https://..." {...field} /></FormControl>
+                    <FormLabel>Fotografía del Docente</FormLabel>
+                    <div className="space-y-3">
+                      <div className="flex gap-2">
+                        <FormControl className="flex-1">
+                          <Input placeholder="URL de la imagen (o sube una)" {...field} />
+                        </FormControl>
+                        <div className="relative">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            id="teacher-image-upload"
+                            onChange={handleFileChange}
+                            disabled={isSubmitting}
+                          />
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="icon" 
+                            asChild
+                            className={isSubmitting ? "opacity-50 cursor-not-allowed" : ""}
+                          >
+                            <label htmlFor="teacher-image-upload" className="cursor-pointer">
+                              <Upload className="h-4 w-4" />
+                            </label>
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {field.value && (
+                        <div className="relative h-40 w-full rounded-lg overflow-hidden border bg-muted">
+                          <Image 
+                            src={field.value} 
+                            alt="Previsualización" 
+                            fill 
+                            className="object-cover"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2 h-7 w-7"
+                            onClick={() => form.setValue('imageUrl', '')}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
