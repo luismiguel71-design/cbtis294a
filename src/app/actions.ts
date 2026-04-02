@@ -43,10 +43,12 @@ export async function getChatbotResponse(query: string) {
   }
 }
 
+const DEFAULT_IMAGE = 'https://picsum.photos/seed/cbtis-evento/800/400';
+
 const eventFormSchema = z.object({
   title: z.string().min(5, 'El título debe tener al menos 5 caracteres.'),
   description: z.string().min(10, 'La descripción debe tener al menos 10 caracteres.'),
-  imageUrl: z.string().url('Por favor, introduce una URL de imagen válida.'),
+  imageUrl: z.string().url().optional().or(z.literal('')),
 });
 
 export async function addEventAction(values: z.infer<typeof eventFormSchema>) {
@@ -59,7 +61,10 @@ export async function addEventAction(values: z.infer<typeof eventFormSchema>) {
     }
 
     try {
-        await addEvent(validatedFields.data);
+        await addEvent({
+          ...validatedFields.data,
+          imageUrl: validatedFields.data.imageUrl || DEFAULT_IMAGE,
+        });
         revalidatePath('/admin/eventos');
         revalidatePath('/noticias');
         revalidatePath('/');
@@ -85,7 +90,10 @@ export async function updateEventAction(values: z.infer<typeof updateEventFormSc
     const { id, ...eventData } = validatedFields.data;
 
     try {
-        await updateEvent(id, eventData);
+        await updateEvent(id, {
+          ...eventData,
+          imageUrl: eventData.imageUrl || DEFAULT_IMAGE,
+        });
         revalidatePath('/admin/eventos');
         revalidatePath(`/noticias/${id}`);
         revalidatePath('/noticias');

@@ -47,10 +47,12 @@ import { z } from 'zod';
 import { addEventAction, deleteEventAction, updateEventAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
+const DEFAULT_EVENT_IMAGE = 'https://picsum.photos/seed/cbtis-evento/800/400';
+
 const eventFormSchema = z.object({
   title: z.string().min(5, 'El título debe tener al menos 5 caracteres.'),
   description: z.string().min(10, 'La descripción debe tener al menos 10 caracteres.'),
-  imageUrl: z.string().url('Por favor, introduce una URL de imagen válida. Te recomendamos usar https://picsum.photos/'),
+  imageUrl: z.string().url('URL inválida.').optional().or(z.literal('')),
 });
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
@@ -138,27 +140,42 @@ export default function AdminEventosPage() {
   async function onSubmit(data: EventFormValues) {
     setIsSubmitting(true);
     
-    const result = currentEvent
-      ? await updateEventAction({ id: currentEvent.id, ...data })
-      : await addEventAction(data);
-    
-    if (result.error) {
+    // Use default image if none provided
+    const payload = {
+      ...data,
+      imageUrl: data.imageUrl || DEFAULT_EVENT_IMAGE,
+    };
+
+    try {
+      const result = currentEvent
+        ? await updateEventAction({ id: currentEvent.id, ...payload })
+        : await addEventAction(payload);
+      
+      if (result.error) {
+        toast({
+          variant: "destructive",
+          title: `Error al ${currentEvent ? 'actualizar' : 'crear'} evento`,
+          description: result.error,
+        });
+      } else {
+        toast({
+          title: `Evento ${currentEvent ? 'Actualizado' : 'Creado'}`,
+          description: `El evento se ha ${currentEvent ? 'actualizado' : 'guardado'} correctamente.`,
+        });
+        setIsFormDialogOpen(false);
+        form.reset();
+        setCurrentEvent(null);
+        await fetchEvents();
+      }
+    } catch (error: any) {
       toast({
         variant: "destructive",
-        title: `Error al ${currentEvent ? 'actualizar' : 'crear'} evento`,
-        description: result.error,
+        title: "Error inesperado",
+        description: error?.message || "No se pudo completar la operación.",
       });
-    } else {
-      toast({
-        title: `Evento ${currentEvent ? 'Actualizado' : 'Creado'}`,
-        description: `El evento se ha ${currentEvent ? 'actualizado' : 'guardado'} correctamente.`,
-      });
-      setIsFormDialogOpen(false);
-      form.reset();
-      setCurrentEvent(null);
-      await fetchEvents();
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   }
   
   const handleOpenCreateDialog = () => {
