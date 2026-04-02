@@ -7,6 +7,7 @@ import { addEvent, deleteEvent, updateEvent, addSchedule, getLatestSchedule, add
 import { signInUser } from '@/lib/firebase/auth';
 import { revalidatePath } from 'next/cache';
 import { generateSchedule, type ScheduleGeneratorInput } from '@/ai/flows/schedule-generator-flow';
+import { teachers as defaultTeachers } from '@/app/lib/school-data';
 
 const EducativeChatbotInputSchema = z.object({
   query: z.string().min(1, 'La consulta no puede estar vacía.'),
@@ -247,5 +248,25 @@ export async function deleteDocenteAction(id: string) {
         return { success: "Docente eliminado exitosamente." };
     } catch (error) {
         return { error: "No se pudo eliminar el docente." };
+    }
+}
+
+export async function seedDocentesAction() {
+    try {
+        const results = await Promise.all(defaultTeachers.map(t => 
+            addDocente({
+                name: t.name,
+                specialty: t.specialty,
+                email: `${t.name.toLowerCase().replace(/\s+/g, '.')}@cbtis294.edu.mx`,
+                status: 'activo',
+                imageUrl: ''
+            })
+        ));
+        revalidatePath('/admin/docentes');
+        revalidatePath('/admin/horarios');
+        return { success: "Docentes base cargados exitosamente." };
+    } catch (error) {
+        console.error("Error seeding docentes:", error);
+        return { error: "No se pudieron precargar los docentes." };
     }
 }

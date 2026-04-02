@@ -24,6 +24,8 @@ import {
 } from '@/components/ui/select';
 import { Loader2, PlusCircle, Trash2, Download, Pencil, CloudIcon } from 'lucide-react';
 import { generateScheduleAction } from '@/app/actions';
+import { getDocentes } from '@/lib/firebase/firestore';
+import { Docente } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ScheduleGeneratorOutput } from '@/ai/flows/schedule-generator-flow';
 import { careers, teachers as defaultTeachersList } from '@/app/lib/school-data';
@@ -147,6 +149,8 @@ function ScheduleAdminForm({ initialData }: { initialData: ScheduleFormValues })
   const [allGeneratedSchedules, setAllGeneratedSchedules] = useState<Record<string, ScheduleGeneratorOutput['schedule']>>({});
   const [viewMode, setViewMode] = useState<'group' | 'teacher'>('group');
   const [selectedTeacher, setSelectedTeacher] = useState<string>('');
+  const [dbTeachers, setDbTeachers] = useState<Docente[]>([]);
+  const [isLoadingDocentes, setIsLoadingDocentes] = useState(true);
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [prioritizeCore, setPrioritizeCore] = useState(false);
   const [allowLongBlocks, setAllowLongBlocks] = useState(false);
@@ -159,7 +163,19 @@ function ScheduleAdminForm({ initialData }: { initialData: ScheduleFormValues })
   const { control, watch, getValues, reset } = form;
 
   useEffect(() => {
-    reset(initialData);
+    const loadDocentes = async () => {
+      setIsLoadingDocentes(true);
+      const data = await getDocentes();
+      setDbTeachers(data.filter(d => d.status === 'activo'));
+      setIsLoadingDocentes(false);
+    };
+    loadDocentes();
+  }, []);
+
+  useEffect(() => {
+    if (initialData) {
+      reset(initialData);
+    }
   }, [initialData, reset]);
 
   // Save data to localStorage on any change
@@ -582,24 +598,35 @@ export default function AdminHorariosPage() {
   }, [router]);
 
   useEffect(() => {
-    let finalData: ScheduleFormValues;
-    try {
-      const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (storedData) {
-        const parsedData = JSON.parse(storedData);
-        const validation = scheduleFormSchema.safeParse(parsedData);
-        if (validation.success) {
-          finalData = validation.data;
-        } else {
-          finalData = { subjects: [], teachers: defaultTeachersList.map(t => ({ name: t.name, availability: 'No especificada' })) };
+    const loadInitialData = async () => {
+      let finalData: ScheduleFormValues;
+      try {
+        const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (storedData) {
+          const parsedData = JSON.parse(storedData);
+          const validation = scheduleFormSchema.safeParse(parsedData);
+          if (validation.success) {
+             setInitialData(validation.data);
+             return;
+          }
         }
-      } else {
-        finalData = { subjects: [], teachers: defaultTeachersList.map(t => ({ name: t.name, availability: 'No especificada' })) };
+        
+        // If not in localStorage, fetch from DB
+        const docentes = await getDocentes();
+        const activeDocentes = docentes.filter(d => d.status === 'activo');
+        
+        finalData = { 
+          subjects: [], 
+          teachers: activeDocentes.length > 0 
+            ? activeDocentes.map(t => ({ name: t.name, availability: 'No especificada' }))
+            : defaultTeachersList.map(t => ({ name: t.name, availability: 'No especificada' })) 
+        };
+        setInitialData(finalData);
+      } catch (error) {
+         setInitialData({ subjects: [], teachers: defaultTeachersList.map(t => ({ name: t.name, availability: 'No especificada' })) });
       }
-    } catch (error) {
-      finalData = { subjects: [], teachers: defaultTeachersList.map(t => ({ name: t.name, availability: 'No especificada' })) };
-    }
-    setInitialData(finalData);
+    };
+    loadInitialData();
   }, []);
 
   if (authLoading || !initialData) {

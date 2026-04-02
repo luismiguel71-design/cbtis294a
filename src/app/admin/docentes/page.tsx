@@ -46,7 +46,7 @@ import {
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { addDocenteAction, deleteDocenteAction, updateDocenteAction } from '@/app/actions';
+import { addDocenteAction, deleteDocenteAction, updateDocenteAction, seedDocentesAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
 const docenteFormSchema = z.object({
@@ -166,6 +166,18 @@ export default function AdminDocentesPage() {
     }
     setIsSubmitting(false);
   }
+
+  const handleSeedDocentes = async () => {
+    setIsSubmitting(true);
+    const result = await seedDocentesAction();
+    if (result.error) {
+      toast({ variant: "destructive", title: "Error", description: result.error });
+    } else {
+      toast({ title: "Sincronización Exitosa", description: result.success });
+      fetchDocentes();
+    }
+    setIsSubmitting(false);
+  };
   
   const handleOpenCreateDialog = () => {
     setCurrentDocente(null);
@@ -255,9 +267,13 @@ export default function AdminDocentesPage() {
             ))}
           </div>
           {docentes.length === 0 && (
-            <div className="text-center py-20 bg-muted/10 rounded-2xl border-2 border-dashed">
-              <Loader2 className="h-10 w-10 animate-spin mx-auto text-muted-foreground mb-4" />
-              <p className="text-xl font-medium text-muted-foreground">Cargando directorio o sin docentes disponibles.</p>
+            <div className="text-center py-20 bg-muted/10 rounded-2xl border-2 border-dashed flex flex-col items-center gap-4">
+              <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
+              <p className="text-xl font-medium text-muted-foreground">No hay docentes en la base de datos oficial.</p>
+              <Button variant="outline" onClick={handleSeedDocentes} disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                Sincronizar con Datos de Horarios
+              </Button>
             </div>
           )}
         </CardContent>
