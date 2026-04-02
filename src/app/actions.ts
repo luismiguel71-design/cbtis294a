@@ -3,7 +3,7 @@
 
 import { educativeChatbot } from '@/ai/flows/educative-chatbot-flow';
 import { z } from 'zod';
-import { addEvent, deleteEvent, updateEvent, addSchedule, getLatestSchedule } from '@/lib/firebase/firestore';
+import { addEvent, deleteEvent, updateEvent, addSchedule, getLatestSchedule, addDocente, updateDocente, deleteDocente } from '@/lib/firebase/firestore';
 import { signInUser } from '@/lib/firebase/auth';
 import { revalidatePath } from 'next/cache';
 import { generateSchedule, type ScheduleGeneratorInput } from '@/ai/flows/schedule-generator-flow';
@@ -202,5 +202,50 @@ export async function loginAction(values: z.infer<typeof loginSchema>) {
     } catch (error: any) {
         console.error("Login error:", error);
         return { error: "Acceso denegado. Verifica tus credenciales." };
+    }
+}
+
+const docenteSchema = z.object({
+    name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
+    specialty: z.string().min(3, 'La especialidad es requerida.'),
+    email: z.string().email('Email inválido.'),
+    imageUrl: z.string().url('URL de imagen inválida (opcional).').optional().or(z.literal('')),
+    status: z.enum(['activo', 'inactivo']),
+});
+
+export async function addDocenteAction(values: z.infer<typeof docenteSchema>) {
+    const validatedFields = docenteSchema.safeParse(values);
+    if (!validatedFields.success) return { error: "Datos inválidos." };
+    try {
+        await addDocente(validatedFields.data);
+        revalidatePath('/admin/docentes');
+        revalidatePath('/admin/horarios');
+        return { success: "Docente agregado exitosamente." };
+    } catch (error) {
+        return { error: "No se pudo agregar el docente." };
+    }
+}
+
+export async function updateDocenteAction(id: string, values: z.infer<typeof docenteSchema>) {
+    const validatedFields = docenteSchema.safeParse(values);
+    if (!validatedFields.success) return { error: "Datos inválidos." };
+    try {
+        await updateDocente(id, validatedFields.data);
+        revalidatePath('/admin/docentes');
+        revalidatePath('/admin/horarios');
+        return { success: "Docente actualizado exitosamente." };
+    } catch (error) {
+        return { error: "No se pudo actualizar el docente." };
+    }
+}
+
+export async function deleteDocenteAction(id: string) {
+    try {
+        await deleteDocente(id);
+        revalidatePath('/admin/docentes');
+        revalidatePath('/admin/horarios');
+        return { success: "Docente eliminado exitosamente." };
+    } catch (error) {
+        return { error: "No se pudo eliminar el docente." };
     }
 }

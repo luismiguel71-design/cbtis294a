@@ -73,6 +73,9 @@ export default function Header() {
               <Link href="/admin/eventos" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden md:flex")}>
                 Noticias
               </Link>
+              <Link href="/admin/docentes" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden md:flex")}>
+                Docentes
+              </Link>
               <Link href="/admin/horarios" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden md:flex")}>
                 Horarios
               </Link>
@@ -118,6 +121,13 @@ export default function Header() {
                     className="block rounded-md px-3 py-2 text-base font-medium text-primary hover:bg-accent"
                   >
                     Gestionar Noticias
+                  </Link>
+                  <Link
+                    href="/admin/docentes"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block rounded-md px-3 py-2 text-base font-medium text-primary hover:bg-accent"
+                  >
+                    Gestionar Docentes
                   </Link>
                   <Link
                     href="/admin/horarios"
