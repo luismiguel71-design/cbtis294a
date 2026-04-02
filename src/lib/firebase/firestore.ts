@@ -4,15 +4,14 @@ import { collection, query, orderBy, limit, getDocs, getDoc, doc, addDoc, Timest
 import { db } from './client';
 import type { Evento } from '../types';
 
-// Mock storage for demo purposes when Firebase is not configured
-// Since this is a 'use server' file, this will persist in the server's memory
-// across multiple server action calls from the same client.
-let mockEvents: Evento[] = [];
+// Mock storage for demo purposes when Firebase is not configured using globalThis
+const globalForFirebase = globalThis as unknown as { mockEvents: Evento[], mockSchedules: any[] };
+if (!globalForFirebase.mockEvents) globalForFirebase.mockEvents = [];
+if (!globalForFirebase.mockSchedules) globalForFirebase.mockSchedules = [];
 
 export async function getEvents(count?: number): Promise<Evento[]> {
   if (!db) {
-    // Return mock events if no DB
-    return count ? mockEvents.slice(0, count) : mockEvents;
+    return count ? globalForFirebase.mockEvents.slice(0, count) : globalForFirebase.mockEvents;
   }
   try {
     const eventsCollection = collection(db, 'events');
@@ -21,10 +20,7 @@ export async function getEvents(count?: number): Promise<Evento[]> {
       : query(eventsCollection, orderBy('date', 'desc'));
 
     const snapshot = await getDocs(q);
-
-    if (snapshot.empty) {
-      return [];
-    }
+    if (snapshot.empty) return [];
 
     const events: Evento[] = [];
     snapshot.forEach((doc) => {
@@ -37,7 +33,6 @@ export async function getEvents(count?: number): Promise<Evento[]> {
             imageUrl: data.imageUrl,
         });
     });
-
     return events;
   } catch (error) {
     console.error("Error getting documents: ", error);
@@ -46,13 +41,10 @@ export async function getEvents(count?: number): Promise<Evento[]> {
 }
 
 export async function getEvent(id: string): Promise<Evento | null> {
-    if (!db) {
-        return mockEvents.find(e => e.id === id) || null;
-    }
+    if (!db) return globalForFirebase.mockEvents.find(e => e.id === id) || null;
     try {
         const docRef = doc(db, 'events', id);
         const docSnap = await getDoc(docRef);
-
         if (docSnap.exists()) {
             const data = docSnap.data();
             return {
@@ -62,9 +54,7 @@ export async function getEvent(id: string): Promise<Evento | null> {
                 date: data.date instanceof Timestamp ? data.date.toDate().toISOString() : new Date().toISOString(),
                 imageUrl: data.imageUrl,
             };
-        } else {
-            return null;
-        }
+        } else return null;
     } catch (error) {
         console.error("Error getting document:", error);
         return null;
@@ -74,21 +64,16 @@ export async function getEvent(id: string): Promise<Evento | null> {
 
 export async function addEvent(data: { title: string; description: string; imageUrl: string; }) {
     if (!db) {
-        // Support mock adding for demo
         const newEvent: Evento = {
             ...data,
             id: Math.random().toString(36).substr(2, 9),
             date: new Date().toISOString(),
         };
-        mockEvents = [newEvent, ...mockEvents];
+        globalForFirebase.mockEvents = [newEvent, ...globalForFirebase.mockEvents];
         return;
     }
     try {
-        const eventsCollection = collection(db, 'events');
-        await addDoc(eventsCollection, {
-            ...data,
-            date: Timestamp.now(),
-        });
+        await addDoc(collection(db, 'events'), { ...data, date: Timestamp.now() });
     } catch (error) {
         console.error("Error adding document: ", error);
         throw new Error("No se pudo crear el evento.");
@@ -97,12 +82,11 @@ export async function addEvent(data: { title: string; description: string; image
 
 export async function updateEvent(id: string, data: { title: string; description: string; imageUrl: string; }) {
     if (!db) {
-        mockEvents = mockEvents.map(e => e.id === id ? { ...e, ...data } : e);
+        globalForFirebase.mockEvents = globalForFirebase.mockEvents.map(e => e.id === id ? { ...e, ...data } : e);
         return;
     }
     try {
-        const eventDoc = doc(db, 'events', id);
-        await updateDoc(eventDoc, data);
+        await updateDoc(doc(db, 'events', id), data);
     } catch (error) {
         console.error("Error updating document: ", error);
         throw new Error("No se pudo actualizar el evento.");
@@ -111,30 +95,24 @@ export async function updateEvent(id: string, data: { title: string; description
 
 export async function deleteEvent(id: string) {
     if (!db) {
-        mockEvents = mockEvents.filter(e => e.id !== id);
+        globalForFirebase.mockEvents = globalForFirebase.mockEvents.filter(e => e.id !== id);
         return;
     }
     try {
-        const eventDoc = doc(db, 'events', id);
-        await deleteDoc(eventDoc);
+        await deleteDoc(doc(db, 'events', id));
     } catch (error) {
         console.error("Error deleting document: ", error);
         throw new Error("No se pudo eliminar el evento.");
     }
 }
 
-// Add schedules also to server memory if no DB
-let mockSchedules: any[] = [];
 export async function addSchedule(schedule: any) {
     if (!db) {
-        mockSchedules.push({ ...schedule, timestamp: Date.now() });
+        globalForFirebase.mockSchedules.push({ ...schedule, timestamp: Date.now() });
         return;
     }
     try {
-        await addDoc(collection(db, 'schedules'), {
-            schedule,
-            timestamp: Timestamp.now()
-        });
+        await addDoc(collection(db, 'schedules'), { schedule, timestamp: Timestamp.now() });
     } catch (error) {
         console.error("Error adding schedule: ", error);
     }
@@ -142,7 +120,7 @@ export async function addSchedule(schedule: any) {
 
 export async function getLatestSchedule() {
     if (!db) {
-        return mockSchedules.length > 0 ? mockSchedules[mockSchedules.length - 1] : null;
+        return globalForFirebase.mockSchedules.length > 0 ? globalForFirebase.mockSchedules[globalForFirebase.mockSchedules.length - 1] : null;
     }
     try {
         const q = query(collection(db, 'schedules'), orderBy('timestamp', 'desc'), limit(1));

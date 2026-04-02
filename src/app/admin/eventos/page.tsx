@@ -127,10 +127,10 @@ export default function AdminEventosPage() {
         title: `Evento ${currentEvent ? 'Actualizado' : 'Creado'}`,
         description: `El evento se ha ${currentEvent ? 'actualizado' : 'guardado'} correctamente.`,
       });
-      form.reset();
-      await fetchEvents();
       setIsFormDialogOpen(false);
+      form.reset();
       setCurrentEvent(null);
+      await fetchEvents();
     }
     setIsSubmitting(false);
   }
