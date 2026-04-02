@@ -1,0 +1,40 @@
+{
+  "placeholderImages": [
+    {
+      "id": "hero-students-laughing",
+      "description": "Happy students laughing together on campus",
+      "imageUrl": "https://picsum.photos/seed/cbtis-hero/1920/1080",
+      "imageHint": "happy students"
+    },
+    {
+      "id": "career-ia",
+      "description": "Abstract representation of artificial intelligence",
+      "imageUrl": "https://picsum.photos/seed/ai/600/400",
+      "imageHint": "artificial intelligence"
+    },
+    {
+      "id": "career-business",
+      "description": "Modern office setting with charts and graphs for business intelligence",
+      "imageUrl": "https://picsum.photos/seed/business/600/400",
+      "imageHint": "business intelligence"
+    },
+    {
+      "id": "career-urbanism",
+      "description": "Architectural model of a city plan for urbanism",
+      "imageUrl": "https://picsum.photos/seed/urbanism/600/400",
+      "imageHint": "city model"
+    },
+    {
+      "id": "career-cosmetology",
+      "description": "A person receiving a facial treatment in a clean, professional salon",
+      "imageUrl": "https://picsum.photos/seed/cosmetology/600/400",
+      "imageHint": "facial treatment"
+    },
+    {
+      "id": "teacher-placeholder",
+      "description": "A professional and friendly-looking teacher",
+      "imageUrl": "https://picsum.photos/seed/teacher/200/200",
+      "imageHint": "professional portrait"
+    }
+  ]
+}
