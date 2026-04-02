@@ -22,13 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, PlusCircle, Trash2, Download, Pencil, CloudIcon } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Download, Pencil, CloudIcon, Users, ExternalLink } from 'lucide-react';
 import { generateScheduleAction } from '@/app/actions';
-import { getDocentes } from '@/lib/firebase/firestore';
-import { Docente } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ScheduleGeneratorOutput } from '@/ai/flows/schedule-generator-flow';
-import { careers, teachers as defaultTeachersList } from '@/app/lib/school-data';
+import { careers } from '@/app/lib/school-data';
+import { getDocentes } from '@/lib/firebase/firestore';
+import { Docente } from '@/lib/types';
 import { Label } from '@/components/ui/label';
 import {
   Accordion,
@@ -43,19 +43,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { getCurrentUser } from '@/lib/firebase/auth';
 import { User } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
+// Schema now only manages subjects — teachers come from Firebase Docentes
 const scheduleFormSchema = z.object({
   subjects: z.array(z.object({
     name: z.string().min(1, 'Materia es requerida.'),
@@ -63,22 +59,16 @@ const scheduleFormSchema = z.object({
     teacher: z.string().min(1, 'Docente es requerido.'),
     group: z.string().min(1),
   })),
-  teachers: z.array(z.object({
-    name: z.string().min(1, 'Nombre es requerido.'),
-    availability: z.string().min(1, 'Disponibilidad es requerida.'),
-  })),
 });
 
 type ScheduleFormValues = z.infer<typeof scheduleFormSchema>;
 
 const semesters = ["1", "2", "3", "4", "5", "6"];
-const LOCAL_STORAGE_KEY = 'cbtis_schedule_data';
+const LOCAL_STORAGE_KEY = 'cbtis_schedule_subjects_v2'; // new key to avoid conflict with old data
 const timeSlots = ["07:00-08:00", "08:00-09:00", "09:00-10:00", "10:00-11:00", "11:00-12:00", "12:00-13:00", "13:00-14:00", "14:00-15:00"];
 const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
 
-type Teacher = { index: number; name: string; availability: string; };
 type Subject = { index: number; name: string; hours: number; teacher: string; group: string };
-
 
 const ScheduleTable = React.forwardRef<HTMLDivElement, { schedule: ScheduleGeneratorOutput['schedule'], title: string, subtitle?: string, detailKey: 'teacher' | 'group' }>(({ schedule, title, subtitle, detailKey }, ref) => {
     return (
@@ -115,7 +105,7 @@ const ScheduleTable = React.forwardRef<HTMLDivElement, { schedule: ScheduleGener
 });
 ScheduleTable.displayName = "ScheduleTable";
 
-function ScheduleAdminForm({ initialData }: { initialData: ScheduleFormValues }) {
+function ScheduleAdminForm({ initialSubjects }: { initialSubjects: ScheduleFormValues['subjects'] }) {
   const [activeScheduleGroup, setActiveScheduleGroup] = useState<string | null>(null);
   const [generatingGroup, setGeneratingGroup] = useState<string | null>(null);
   const { toast } = useToast();
@@ -125,94 +115,83 @@ function ScheduleAdminForm({ initialData }: { initialData: ScheduleFormValues })
   const [selectedSemester, setSelectedSemester] = useState(semesters[0]);
   const [openAccordionGroup, setOpenAccordionGroup] = useState<string[]>([]);
 
-  // States for uncontrolled inputs
-  const [newTeacherName, setNewTeacherName] = useState('');
-  const [newTeacherAvailability, setNewTeacherAvailability] = useState('');
+  // Input states
   const [newSubjectName, setNewSubjectName] = useState('');
   const [newSubjectHours, setNewSubjectHours] = useState('');
   const [newSubjectTeacher, setNewSubjectTeacher] = useState('');
-  
-  // State for edit dialogs
-  const [isTeacherEditDialogOpen, setIsTeacherEditDialogOpen] = useState(false);
+
+  // Edit dialog states
   const [isSubjectEditDialogOpen, setIsSubjectEditDialogOpen] = useState(false);
-  const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
-  
-  // State for edit dialog inputs
-  const [teacherEditName, setTeacherEditName] = useState('');
-  const [teacherEditAvailability, setTeacherEditAvailability] = useState('');
   const [subjectEditName, setSubjectEditName] = useState('');
   const [subjectEditHours, setSubjectEditHours] = useState('');
   const [subjectEditTeacher, setSubjectEditTeacher] = useState('');
 
-  // New states for advanced features
+  // Schedule states
   const [allGeneratedSchedules, setAllGeneratedSchedules] = useState<Record<string, ScheduleGeneratorOutput['schedule']>>({});
   const [viewMode, setViewMode] = useState<'group' | 'teacher'>('group');
   const [selectedTeacher, setSelectedTeacher] = useState<string>('');
-  const [dbTeachers, setDbTeachers] = useState<Docente[]>([]);
-  const [isLoadingDocentes, setIsLoadingDocentes] = useState(true);
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [prioritizeCore, setPrioritizeCore] = useState(false);
   const [allowLongBlocks, setAllowLongBlocks] = useState(false);
-  
+
+  // Teachers from Firebase
+  const [dbTeachers, setDbTeachers] = useState<Docente[]>([]);
+  const [isLoadingDocentes, setIsLoadingDocentes] = useState(true);
+
   const form = useForm<ScheduleFormValues>({
     resolver: zodResolver(scheduleFormSchema),
-    defaultValues: initialData,
+    defaultValues: { subjects: initialSubjects },
   });
 
   const { control, watch, getValues, reset } = form;
 
+  // Load teachers from Firebase
   useEffect(() => {
-    const loadDocentes = async () => {
+    const load = async () => {
       setIsLoadingDocentes(true);
       const data = await getDocentes();
       setDbTeachers(data.filter(d => d.status === 'activo'));
       setIsLoadingDocentes(false);
     };
-    loadDocentes();
+    load();
   }, []);
 
-  useEffect(() => {
-    if (initialData) {
-      reset(initialData);
-    }
-  }, [initialData, reset]);
-
-  // Save data to localStorage on any change
+  // Save subjects to localStorage on change
   useEffect(() => {
     const subscription = watch(() => {
       try {
-        const currentValues = getValues();
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(currentValues));
-      } catch (error) {
-        console.error("Failed to save schedule data to localStorage", error);
-      }
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(getValues('subjects')));
+      } catch (e) {}
     });
     return () => subscription.unsubscribe();
   }, [watch, getValues]);
-  
+
   const { fields: subjectFields, append: appendSubject, remove: removeSubject, update: updateSubject } = useFieldArray({ control, name: "subjects" });
-  const { fields: teacherFields, append: appendTeacher, remove: removeTeacher, update: updateTeacher } = useFieldArray({ control, name: "teachers" });
+
+  // Build teacher list for schedule generation (from Firebase)
+  const teachersForSchedule = useMemo(() =>
+    dbTeachers.map(t => ({ name: t.name, availability: 'Lunes a Viernes' })),
+    [dbTeachers]
+  );
 
   const handleGenerateForGroup = async (group: string) => {
     setGeneratingGroup(group);
-    
-    const allTeachers = getValues('teachers');
     const groupSubjects = getValues('subjects').filter(s => s.group === group);
     
     if (groupSubjects.length === 0) {
-      toast({ variant: 'destructive', title: 'No hay materias', description: `Agrega materias al grupo "${group}" para poder generar un horario.` });
+      toast({ variant: 'destructive', title: 'No hay materias', description: `Agrega materias al grupo "${group}".` });
       setGeneratingGroup(null);
       return;
     }
-     if (allTeachers.length === 0) {
-      toast({ variant: 'destructive', title: 'No hay docentes', description: 'Agrega al menos un docente para poder generar un horario.' });
+    if (teachersForSchedule.length === 0) {
+      toast({ variant: 'destructive', title: 'No hay docentes', description: 'Agrega docentes en el módulo "Docentes" primero.' });
       setGeneratingGroup(null);
       return;
     }
 
     const result = await generateScheduleAction({ 
-        teachers: allTeachers, 
+        teachers: teachersForSchedule, 
         subjects: groupSubjects,
         prioritizeCoreSubjects: prioritizeCore,
         allowLongBlocksForProgramming: allowLongBlocks,
@@ -223,58 +202,38 @@ function ScheduleAdminForm({ initialData }: { initialData: ScheduleFormValues })
     } else if (result.schedule) {
       setAllGeneratedSchedules(prev => ({...prev, [group]: result.schedule!}));
       setActiveScheduleGroup(group);
-      toast({ title: 'Horario Generado y Sincronizado', description: `El horario para ${group} ha sido guardado en la nube.` });
+      toast({ title: 'Horario Generado', description: `Horario para ${group} listo.` });
     }
     setGeneratingGroup(null);
-  }
+  };
 
   const handleGenerateAll = async () => {
     setIsGeneratingAll(true);
-    toast({ title: 'Iniciando generación masiva...', description: 'Esto se guardará automáticamente en la nube.' });
-    
     const allGroups = Array.from(new Set(subjectFields.map(s => s.group)));
-    const allTeachers = getValues('teachers');
     let newSchedules: Record<string, ScheduleGeneratorOutput['schedule']> = {};
     let errors: string[] = [];
 
     for (const group of allGroups) {
-        const groupSubjects = getValues('subjects').filter(s => s.group === group);
-        if (groupSubjects.length > 0) {
-            const result = await generateScheduleAction({
-                teachers: allTeachers,
-                subjects: groupSubjects,
-                prioritizeCoreSubjects: prioritizeCore,
-                allowLongBlocksForProgramming: allowLongBlocks,
-            });
-            if (result.schedule) {
-                newSchedules[group] = result.schedule;
-            } else {
-                errors.push(group);
-            }
-        }
+      const groupSubjects = getValues('subjects').filter(s => s.group === group);
+      if (groupSubjects.length > 0) {
+        const result = await generateScheduleAction({
+          teachers: teachersForSchedule,
+          subjects: groupSubjects,
+          prioritizeCoreSubjects: prioritizeCore,
+          allowLongBlocksForProgramming: allowLongBlocks,
+        });
+        if (result.schedule) newSchedules[group] = result.schedule;
+        else errors.push(group);
+      }
     }
 
     setAllGeneratedSchedules(prev => ({...prev, ...newSchedules}));
     setIsGeneratingAll(false);
 
     if (errors.length > 0) {
-        toast({ variant: 'destructive', title: 'Generación con errores', description: `No se pudo generar horario para: ${errors.join(', ')}` });
+      toast({ variant: 'destructive', title: 'Errores', description: `No se generó: ${errors.join(', ')}` });
     } else {
-        toast({ title: 'Generación Sincronizada', description: 'Todos los horarios han sido guardados en la nube.' });
-    }
-  };
-
-  const handleAddTeacher = () => {
-    if (newTeacherName && newTeacherAvailability) {
-      if (getValues('teachers').some(t => t.name.toLowerCase() === newTeacherName.toLowerCase())) {
-        toast({ variant: 'destructive', title: 'Docente duplicado', description: 'Este docente ya ha sido añadido.' });
-        return;
-      }
-      appendTeacher({ name: newTeacherName, availability: newTeacherAvailability });
-      setNewTeacherName('');
-      setNewTeacherAvailability('');
-    } else {
-      toast({ variant: 'destructive', title: 'Faltan datos del docente', description: "Por favor, completa el nombre y la disponibilidad." });
+      toast({ title: 'Generación Completa', description: 'Todos los horarios han sido generados.' });
     }
   };
 
@@ -286,13 +245,13 @@ function ScheduleAdminForm({ initialData }: { initialData: ScheduleFormValues })
       setNewSubjectHours('');
       setNewSubjectTeacher('');
     } else {
-      toast({ variant: 'destructive', title: 'Faltan datos de la materia', description: 'Por favor, completa todos los campos de la materia.' });
+      toast({ variant: 'destructive', title: 'Faltan datos', description: 'Completa todos los campos de la materia.' });
     }
   };
   
   const handleExport = useCallback(() => {
-    if (scheduleRef.current === null) {
-      toast({ variant: 'destructive', title: 'Nada que exportar', description: 'Primero genera y selecciona un horario.' });
+    if (!scheduleRef.current) {
+      toast({ variant: 'destructive', title: 'Nada que exportar', description: 'Genera un horario primero.' });
       return;
     }
     toPng(scheduleRef.current, { cacheBust: true, backgroundColor: 'white', pixelRatio: 1.5 })
@@ -303,35 +262,9 @@ function ScheduleAdminForm({ initialData }: { initialData: ScheduleFormValues })
         link.href = dataUrl;
         link.click();
       })
-      .catch((err) => {
-        console.log(err);
-        toast({
-          variant: 'destructive',
-          title: 'Error al exportar',
-          description: 'No se pudo generar la imagen del horario.'
-        });
-      });
+      .catch(() => toast({ variant: 'destructive', title: 'Error al exportar' }));
   }, [activeScheduleGroup, selectedTeacher, viewMode, toast]);
 
-  const handleOpenTeacherEditDialog = (index: number) => {
-    const teacher = teacherFields[index];
-    setEditingTeacher({ index, ...teacher });
-    setTeacherEditName(teacher.name);
-    setTeacherEditAvailability(teacher.availability);
-    setIsTeacherEditDialogOpen(true);
-  };
-  
-  const handleUpdateTeacher = () => {
-    if (!editingTeacher || !teacherEditName || !teacherEditAvailability) {
-        toast({ variant: 'destructive', title: 'Datos incompletos', description: 'El nombre y la disponibilidad no pueden estar vacíos.' });
-        return;
-    };
-    updateTeacher(editingTeacher.index, { name: teacherEditName, availability: teacherEditAvailability });
-    setIsTeacherEditDialogOpen(false);
-    setEditingTeacher(null);
-    toast({ title: 'Docente Actualizado', description: 'Los datos del docente se han guardado.' });
-  };
-  
   const handleOpenSubjectEditDialog = (index: number) => {
     const subject = subjectFields[index];
     setEditingSubject({ index, ...subject });
@@ -343,46 +276,32 @@ function ScheduleAdminForm({ initialData }: { initialData: ScheduleFormValues })
 
   const handleUpdateSubject = () => {
     if (!editingSubject || !subjectEditName || !subjectEditHours || !subjectEditTeacher) {
-        toast({ variant: 'destructive', title: 'Datos incompletos', description: 'Todos los campos de la materia son requeridos.' });
-        return;
-    };
-    updateSubject(editingSubject.index, { 
-        ...editingSubject, 
-        name: subjectEditName, 
-        hours: parseInt(subjectEditHours), 
-        teacher: subjectEditTeacher 
-    });
+      toast({ variant: 'destructive', title: 'Datos incompletos' });
+      return;
+    }
+    updateSubject(editingSubject.index, { ...editingSubject, name: subjectEditName, hours: parseInt(subjectEditHours), teacher: subjectEditTeacher });
     setIsSubjectEditDialogOpen(false);
     setEditingSubject(null);
-    toast({ title: 'Materia Actualizada', description: 'Los datos de la materia se han guardado.' });
+    toast({ title: 'Materia Actualizada' });
   };
 
   const groups = Array.from(new Set(subjectFields.map(s => s.group))).sort();
 
   const teacherSchedules = useMemo(() => {
     const schedules: Record<string, ScheduleGeneratorOutput['schedule']> = {};
-    const allTeachers = teacherFields.map(t => t.name);
-
-    for (const teacherName of allTeachers) {
-        const teacherSchedule: ScheduleGeneratorOutput['schedule'] = { Lunes: [], Martes: [], Miércoles: [], Jueves: [], Viernes: [] };
-        
-        for (const groupSchedule of Object.values(allGeneratedSchedules)) {
-            for (const day of days) {
-                const dayKey = day as keyof typeof groupSchedule;
-                const slotsForTeacher = groupSchedule[dayKey]?.filter(slot => slot.teacher === teacherName);
-                if (slotsForTeacher) {
-                    teacherSchedule[dayKey].push(...slotsForTeacher);
-                }
-            }
-        }
+    for (const t of dbTeachers) {
+      const ts: ScheduleGeneratorOutput['schedule'] = { Lunes: [], Martes: [], Miércoles: [], Jueves: [], Viernes: [] };
+      for (const gs of Object.values(allGeneratedSchedules)) {
         for (const day of days) {
-            teacherSchedule[day as keyof typeof teacherSchedule]?.sort((a, b) => a.time.localeCompare(b.time));
+          const k = day as keyof typeof gs;
+          gs[k]?.filter(s => s.teacher === t.name).forEach(s => ts[k].push(s));
         }
-
-        schedules[teacherName] = teacherSchedule;
+      }
+      for (const day of days) ts[day as keyof typeof ts]?.sort((a, b) => a.time.localeCompare(b.time));
+      schedules[t.name] = ts;
     }
     return schedules;
-  }, [allGeneratedSchedules, teacherFields]);
+  }, [allGeneratedSchedules, dbTeachers]);
 
   const activeGroupSchedule = activeScheduleGroup ? allGeneratedSchedules[activeScheduleGroup] : null;
   const selectedTeacherSchedule = selectedTeacher ? teacherSchedules[selectedTeacher] : null;
@@ -393,156 +312,158 @@ function ScheduleAdminForm({ initialData }: { initialData: ScheduleFormValues })
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-2xl flex items-center gap-2">
-                <CloudIcon className="h-6 w-6 text-primary" />
-                Panel de Generación de Horarios (Admin)
+              <CloudIcon className="h-6 w-6 text-primary" />
+              Panel de Generación de Horarios
             </CardTitle>
-            <CardDescription>Los cambios guardados aquí se subirán automáticamente a la nube y serán visibles para todos.</CardDescription>
+            <CardDescription>Los docentes se gestionan en el módulo <Link href="/admin/docentes" className="text-primary font-semibold hover:underline inline-flex items-center gap-1">Docentes <ExternalLink className="h-3 w-3"/></Link>. Aquí asigna materias y genera horarios.</CardDescription>
           </div>
           <Button variant="outline" asChild>
             <a href="/horarios" target="_blank">Ver Vista Pública</a>
           </Button>
         </CardHeader>
       </Card>
-      
+
+      {/* Docentes panel (read-only) */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <div>
+            <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5 text-primary"/>Docentes Activos ({dbTeachers.length})</CardTitle>
+            <CardDescription>Cargados desde el directorio oficial. Para agregar o editar, usa el módulo de Docentes.</CardDescription>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/admin/docentes"><Users className="mr-2 h-4 w-4"/>Gestionar Docentes</Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {isLoadingDocentes ? (
+            <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin"/>Cargando docentes...</div>
+          ) : dbTeachers.length === 0 ? (
+            <div className="text-center py-4 bg-amber-50 rounded-lg border border-amber-200">
+              <p className="text-amber-700 font-medium">No hay docentes activos registrados.</p>
+              <Button variant="link" asChild className="text-amber-700"><Link href="/admin/docentes">Ir a registrar docentes →</Link></Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              {dbTeachers.map(t => (
+                <div key={t.id} className="flex items-center gap-2 p-2 bg-muted/40 rounded-lg text-sm">
+                  <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"/>
+                  <span className="truncate font-medium">{t.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Form {...form}>
         <div className="grid lg:grid-cols-2 gap-8 items-start">
           <div className="space-y-8">
             <Card>
-              <CardHeader><CardTitle>1. Gestionar Docentes</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input placeholder="Nombre del docente" value={newTeacherName} onChange={e => setNewTeacherName(e.target.value)} />
-                  <Input placeholder="Ej: Lunes 7-11, Mié 10-13" value={newTeacherAvailability} onChange={e => setNewTeacherAvailability(e.target.value)} />
-                </div>
-                <Button type="button" onClick={handleAddTeacher} className="w-full sm:w-auto"><PlusCircle className="mr-2 h-4 w-4"/> Añadir Docente</Button>
-                <div className="space-y-2 pt-4 max-h-60 overflow-y-auto">
-                  {teacherFields.map((field, index) => (
-                    <div key={field.id} className="flex items-center justify-between p-2 border rounded-md gap-2">
-                      <div><p className="font-semibold">{field.name}</p><p className="text-sm text-muted-foreground">{field.availability}</p></div>
-                       <div className="flex gap-2">
-                        <Button type="button" variant="outline" size="icon" onClick={() => handleOpenTeacherEditDialog(index)}><Pencil className="h-4 w-4"/></Button>
-                        <Button type="button" variant="destructive" size="icon" onClick={() => removeTeacher(index)}><Trash2 className="h-4 w-4"/></Button>
-                      </div>
-                    </div>
-                  ))}
-                  {teacherFields.length === 0 && <p className="text-sm text-center text-muted-foreground py-4">Agrega al menos un docente.</p>}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader><CardTitle>2. Configurar Materias y Reglas</CardTitle></CardHeader>
+              <CardHeader><CardTitle>1. Configurar Materias</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <p className="font-medium text-sm">Añadir Materia</p>
                 <div className="flex gap-4 items-end">
                   <div className="flex-1"><Label>Carrera</Label><Select value={selectedCareer} onValueChange={setSelectedCareer}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{careers.map(c => <SelectItem key={c.slug} value={c.slug}>{c.title}</SelectItem>)}</SelectContent></Select></div>
                   <div className="flex-1"><Label>Semestre</Label><Select value={selectedSemester} onValueChange={setSelectedSemester}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{semesters.map(s => <SelectItem key={s} value={s}>{s}° Semestre</SelectItem>)}</SelectContent></Select></div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Input placeholder="Nombre de materia" value={newSubjectName} onChange={e => setNewSubjectName(e.target.value)} />
                   <Input type="number" placeholder="Horas/semana" value={newSubjectHours} onChange={e => setNewSubjectHours(e.target.value)} />
-                  <Select value={newSubjectTeacher} onValueChange={setNewSubjectTeacher}>
-                    <SelectTrigger><SelectValue placeholder="Seleccionar Docente"/></SelectTrigger>
-                    <SelectContent>{watch('teachers').map(t => <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>)}</SelectContent>
+                  <Select value={newSubjectTeacher} onValueChange={setNewSubjectTeacher} disabled={isLoadingDocentes || dbTeachers.length === 0}>
+                    <SelectTrigger><SelectValue placeholder={isLoadingDocentes ? "Cargando..." : dbTeachers.length === 0 ? "Sin docentes" : "Seleccionar Docente"}/></SelectTrigger>
+                    <SelectContent>{dbTeachers.map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <Button type="button" onClick={handleAddSubject} className="w-full sm:w-auto"><PlusCircle className="mr-2 h-4 w-4"/> Añadir Materia</Button>
+                <Button type="button" onClick={handleAddSubject} className="w-full sm:w-auto" disabled={dbTeachers.length === 0}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Materia</Button>
                 <Separator className="my-6" />
-                <p className="font-medium text-sm">Opciones Avanzadas de Planificación</p>
-                 <div className="flex items-center space-x-2">
-                    <Checkbox id="prioritize-core" checked={prioritizeCore} onCheckedChange={(checked) => setPrioritizeCore(Boolean(checked))} />
-                    <Label htmlFor="prioritize-core" className="cursor-pointer text-sm font-normal">Priorizar materias de pensamiento y ciencias en primeras horas.</Label>
+                <p className="font-medium text-sm">Opciones Avanzadas</p>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="prioritize-core" checked={prioritizeCore} onCheckedChange={(c) => setPrioritizeCore(Boolean(c))} />
+                  <Label htmlFor="prioritize-core" className="cursor-pointer text-sm font-normal">Priorizar materias de pensamiento y ciencias en primeras horas.</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <Checkbox id="allow-long-blocks" checked={allowLongBlocks} onCheckedChange={(checked) => setAllowLongBlocks(Boolean(checked))}/>
-                    <Label htmlFor="allow-long-blocks" className="cursor-pointer text-sm font-normal">Permitir bloques largos (hasta 5h) para materias de programación.</Label>
+                  <Checkbox id="allow-long-blocks" checked={allowLongBlocks} onCheckedChange={(c) => setAllowLongBlocks(Boolean(c))}/>
+                  <Label htmlFor="allow-long-blocks" className="cursor-pointer text-sm font-normal">Permitir bloques largos (hasta 5h) para materias de programación.</Label>
                 </div>
               </CardContent>
             </Card>
-
           </div>
+
           <div className="space-y-8">
             <Card>
-                <CardHeader className="flex-row items-center justify-between">
-                    <div>
-                        <CardTitle>Grupos Configurados y Generación</CardTitle>
-                        <CardDescription>Gestiona materias y genera horarios.</CardDescription>
-                    </div>
-                    <Button type="button" onClick={handleGenerateAll} disabled={isGeneratingAll}>
-                        {isGeneratingAll && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                        Generar y Sincronizar Todo
-                    </Button>
-                </CardHeader>
-                <CardContent>
-                    {groups.length > 0 ? (
-                        <Accordion type="multiple" className="w-full" value={openAccordionGroup} onValueChange={setOpenAccordionGroup}>
-                        {groups.map(group => {
-                            const groupSubjects = subjectFields.filter(s => s.group === group);
-                            const subjectCountForGroup = groupSubjects.length;
-                            const totalHoursForGroup = groupSubjects.reduce((total, subject) => total + (subject.hours || 0), 0);
-                            
-                            return (
-                            <AccordionItem value={group} key={group}>
-                                <AccordionTrigger>{group} ({subjectCountForGroup} materias, {totalHoursForGroup} horas)</AccordionTrigger>
-                                <AccordionContent className="space-y-3">
-                                    {groupSubjects.map((subject) => {
-                                        const originalIndex = subjectFields.findIndex(sf => sf.id === subject.id);
-                                        if (originalIndex === -1) return null;
-
-                                        return (
-                                            <div key={subject.id} className="flex items-center justify-between p-2 border rounded-md gap-2">
-                                                <div><p className="font-semibold">{subject.name} ({subject.hours}h)</p><p className="text-sm text-muted-foreground">{subject.teacher}</p></div>
-                                                <div className="flex gap-2">
-                                                    <Button type="button" variant="outline" size="icon" onClick={() => handleOpenSubjectEditDialog(originalIndex)}><Pencil className="h-4 w-4"/></Button>
-                                                    <Button type="button" variant="destructive" size="icon" onClick={() => removeSubject(originalIndex)}><Trash2 className="h-4 w-4"/></Button>
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                    {subjectCountForGroup === 0 && <p className="text-sm text-center text-muted-foreground py-4">No hay materias para este grupo.</p>}
-                                    <Button type="button" className="w-full mt-4" onClick={() => handleGenerateForGroup(group)} disabled={generatingGroup === group}>
-                                        {generatingGroup === group ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Generando...</> : `Generar Horario para ${group}`}
-                                    </Button>
-                                </AccordionContent>
-                            </AccordionItem>
-                            )
-                        })}
-                        </Accordion>
-                    ) : (
-                        <p className="text-sm text-center text-muted-foreground py-4">Añade materias para ver los grupos aquí.</p>
-                    )}
-                </CardContent>
+              <CardHeader className="flex-row items-center justify-between">
+                <div>
+                  <CardTitle>2. Grupos y Generación</CardTitle>
+                  <CardDescription>Genera horarios por grupo.</CardDescription>
+                </div>
+                <Button type="button" onClick={handleGenerateAll} disabled={isGeneratingAll || dbTeachers.length === 0}>
+                  {isGeneratingAll && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                  Generar Todo
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {groups.length > 0 ? (
+                  <Accordion type="multiple" className="w-full" value={openAccordionGroup} onValueChange={setOpenAccordionGroup}>
+                    {groups.map(group => {
+                      const groupSubjects = subjectFields.filter(s => s.group === group);
+                      return (
+                        <AccordionItem value={group} key={group}>
+                          <AccordionTrigger>{group} ({groupSubjects.length} materias)</AccordionTrigger>
+                          <AccordionContent className="space-y-3">
+                            {groupSubjects.map((subject) => {
+                              const originalIndex = subjectFields.findIndex(sf => sf.id === subject.id);
+                              if (originalIndex === -1) return null;
+                              return (
+                                <div key={subject.id} className="flex items-center justify-between p-2 border rounded-md gap-2">
+                                  <div><p className="font-semibold">{subject.name} ({subject.hours}h)</p><p className="text-sm text-muted-foreground">{subject.teacher}</p></div>
+                                  <div className="flex gap-2">
+                                    <Button type="button" variant="outline" size="icon" onClick={() => handleOpenSubjectEditDialog(originalIndex)}><Pencil className="h-4 w-4"/></Button>
+                                    <Button type="button" variant="destructive" size="icon" onClick={() => removeSubject(originalIndex)}><Trash2 className="h-4 w-4"/></Button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            <Button type="button" className="w-full mt-4" onClick={() => handleGenerateForGroup(group)} disabled={generatingGroup === group || dbTeachers.length === 0}>
+                              {generatingGroup === group ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/>Generando...</> : `Generar Horario`}
+                            </Button>
+                          </AccordionContent>
+                        </AccordionItem>
+                      );
+                    })}
+                  </Accordion>
+                ) : (
+                  <p className="text-sm text-center text-muted-foreground py-4">Añade materias para ver los grupos aquí.</p>
+                )}
+              </CardContent>
             </Card>
 
             <Card className="min-h-[400px] sticky top-24">
               <CardHeader>
                 <div className="flex justify-between items-center">
-                    <CardTitle>Previsualización</CardTitle>
-                    <Button onClick={handleExport} variant="outline" size="sm" disabled={!activeGroupSchedule && !selectedTeacherSchedule}>
-                        <Download className="mr-2 h-4 w-4" />
-                        Exportar
-                    </Button>
+                  <CardTitle>Previsualización</CardTitle>
+                  <Button onClick={handleExport} variant="outline" size="sm" disabled={!activeGroupSchedule && !selectedTeacherSchedule}>
+                    <Download className="mr-2 h-4 w-4"/>Exportar
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'group' | 'teacher')} className="w-full">
+                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'group' | 'teacher')} className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="group">Vista por Grupo</TabsTrigger>
                     <TabsTrigger value="teacher">Vista por Docente</TabsTrigger>
                   </TabsList>
                   <TabsContent value="group" className="mt-4">
                     {generatingGroup && <div className="flex flex-col items-center justify-center h-full gap-4 pt-10"><Loader2 className="h-12 w-12 animate-spin text-primary"/><p className="text-muted-foreground">Generando horario para {generatingGroup}...</p></div>}
-                    {!generatingGroup && !activeGroupSchedule && <div className="flex items-center justify-center h-full pt-20 text-center text-muted-foreground"><p>El horario de un grupo aparecerá aquí una vez que se genere.</p></div>}
-                    {activeGroupSchedule && <ScheduleTable ref={scheduleRef} schedule={activeGroupSchedule} title="Horario de Clases" subtitle={activeScheduleGroup} detailKey="teacher"/>}
+                    {!generatingGroup && !activeGroupSchedule && <div className="flex items-center justify-center h-full pt-20 text-center text-muted-foreground"><p>Genera un horario para verlo aquí.</p></div>}
+                    {activeGroupSchedule && <ScheduleTable ref={scheduleRef} schedule={activeGroupSchedule} title="Horario de Clases" subtitle={activeScheduleGroup ?? undefined} detailKey="teacher"/>}
                   </TabsContent>
                   <TabsContent value="teacher" className="mt-4 space-y-4">
                     <Select onValueChange={setSelectedTeacher} value={selectedTeacher}>
-                        <SelectTrigger><SelectValue placeholder="Selecciona un docente para ver su horario"/></SelectTrigger>
-                        <SelectContent>{teacherFields.map(t => <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>)}</SelectContent>
+                      <SelectTrigger><SelectValue placeholder="Selecciona un docente"/></SelectTrigger>
+                      <SelectContent>{dbTeachers.map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}</SelectContent>
                     </Select>
                     {!selectedTeacher && <div className="flex items-center justify-center h-full pt-20 text-center text-muted-foreground"><p>Selecciona un docente.</p></div>}
-                    {selectedTeacher && !selectedTeacherSchedule && <div className="flex items-center justify-center h-full pt-20 text-center text-muted-foreground"><p>No se encontró horario para este docente.</p></div>}
-                    {selectedTeacherSchedule && <ScheduleTable ref={scheduleRef} schedule={selectedTeacherSchedule} title="Horario de Docente" subtitle={selectedTeacher} detailKey="group"/>}
+                    {selectedTeacher && selectedTeacherSchedule && <ScheduleTable ref={scheduleRef} schedule={selectedTeacherSchedule} title="Horario de Docente" subtitle={selectedTeacher} detailKey="group"/>}
                   </TabsContent>
                 </Tabs>
               </CardContent>
@@ -550,28 +471,25 @@ function ScheduleAdminForm({ initialData }: { initialData: ScheduleFormValues })
           </div>
         </div>
       </Form>
-      
-      {/* Fragments of dialogs */}
-      <Dialog open={isTeacherEditDialogOpen} onOpenChange={setIsTeacherEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Editar Docente</DialogTitle></DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Nombre</Label><Input value={teacherEditName} onChange={(e) => setTeacherEditName(e.target.value)} className="col-span-3" /></div>
-            <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Disponibilidad</Label><Input value={teacherEditAvailability} onChange={(e) => setTeacherEditAvailability(e.target.value)} className="col-span-3" /></div>
-          </div>
-          <DialogFooter><Button onClick={() => setIsTeacherEditDialogOpen(false)} variant="outline">Cancelar</Button><Button onClick={handleUpdateTeacher}>Guardar Cambios</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
+
       <Dialog open={isSubjectEditDialogOpen} onOpenChange={setIsSubjectEditDialogOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Editar Materia</DialogTitle></DialogHeader>
-           <div className="grid gap-4 py-4">
+          <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Materia</Label><Input value={subjectEditName} onChange={(e) => setSubjectEditName(e.target.value)} className="col-span-3" /></div>
-             <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Horas/Semana</Label><Input type="number" value={subjectEditHours} onChange={(e) => setSubjectEditHours(e.target.value)} className="col-span-3" /></div>
-            <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Docente</Label><Select value={subjectEditTeacher} onValueChange={setSubjectEditTeacher}><SelectTrigger className="col-span-3"><SelectValue/></SelectTrigger><SelectContent>{teacherFields.map((t) => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}</SelectContent></Select></div>
+            <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Horas/Semana</Label><Input type="number" value={subjectEditHours} onChange={(e) => setSubjectEditHours(e.target.value)} className="col-span-3" /></div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Docente</Label>
+              <Select value={subjectEditTeacher} onValueChange={setSubjectEditTeacher}>
+                <SelectTrigger className="col-span-3"><SelectValue/></SelectTrigger>
+                <SelectContent>{dbTeachers.map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
           </div>
-          <DialogFooter><Button onClick={() => setIsSubjectEditDialogOpen(false)} variant="outline">Cancelar</Button><Button onClick={handleUpdateSubject}>Guardar Cambios</Button></DialogFooter>
+          <DialogFooter>
+            <Button onClick={() => setIsSubjectEditDialogOpen(false)} variant="outline">Cancelar</Button>
+            <Button onClick={handleUpdateSubject}>Guardar Cambios</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -580,64 +498,43 @@ function ScheduleAdminForm({ initialData }: { initialData: ScheduleFormValues })
 
 
 export default function AdminHorariosPage() {
-  const [initialData, setInitialData] = useState<ScheduleFormValues | null>(null);
+  const [initialSubjects, setInitialSubjects] = useState<ScheduleFormValues['subjects'] | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = getCurrentUser((user) => {
-        if (user) {
-            setUser(user);
-        } else {
-            router.push('/login');
-        }
-        setAuthLoading(false);
+    const unsubscribe = getCurrentUser((u) => {
+      if (u) setUser(u);
+      else router.push('/login');
+      setAuthLoading(false);
     });
     return () => unsubscribe();
   }, [router]);
 
   useEffect(() => {
-    const loadInitialData = async () => {
-      let finalData: ScheduleFormValues;
-      try {
-        const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (storedData) {
-          const parsedData = JSON.parse(storedData);
-          const validation = scheduleFormSchema.safeParse(parsedData);
-          if (validation.success) {
-             setInitialData(validation.data);
-             return;
-          }
+    try {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setInitialSubjects(parsed);
+          return;
         }
-        
-        // If not in localStorage, fetch from DB
-        const docentes = await getDocentes();
-        const activeDocentes = docentes.filter(d => d.status === 'activo');
-        
-        finalData = { 
-          subjects: [], 
-          teachers: activeDocentes.length > 0 
-            ? activeDocentes.map(t => ({ name: t.name, availability: 'No especificada' }))
-            : defaultTeachersList.map(t => ({ name: t.name, availability: 'No especificada' })) 
-        };
-        setInitialData(finalData);
-      } catch (error) {
-         setInitialData({ subjects: [], teachers: defaultTeachersList.map(t => ({ name: t.name, availability: 'No especificada' })) });
       }
-    };
-    loadInitialData();
+    } catch (e) {}
+    setInitialSubjects([]);
   }, []);
 
-  if (authLoading || !initialData) {
+  if (authLoading || !initialSubjects) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
       </div>
     );
   }
-  
+
   if (!user) return null;
 
-  return <ScheduleAdminForm initialData={initialData} />;
+  return <ScheduleAdminForm initialSubjects={initialSubjects} />;
 }
