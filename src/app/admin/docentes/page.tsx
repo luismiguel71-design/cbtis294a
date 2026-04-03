@@ -124,6 +124,24 @@ export default function AdminDocentesPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 1024 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "Archivo demasiado grande",
+        description: "El límite es 1MB.",
+      });
+      return;
+    }
+
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      toast({
+        variant: "destructive",
+        title: "Formato no soportado",
+        description: "Solo se permiten imágenes JPG o PNG.",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const path = `teachers/${Date.now()}_${file.name}`;
@@ -348,6 +366,7 @@ export default function AdminDocentesPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Fotografía del Docente</FormLabel>
+                    <p className="text-sm text-muted-foreground">Límite de tamaño: 1MB. Formatos permitidos: JPG, PNG.</p>
                     <div className="space-y-3">
                       <div className="flex gap-2">
                         <FormControl className="flex-1">
@@ -356,7 +375,7 @@ export default function AdminDocentesPage() {
                         <div className="relative">
                           <Input
                             type="file"
-                            accept="image/*"
+                            accept=".jpg,.jpeg,.png"
                             className="hidden"
                             id="teacher-image-upload"
                             onChange={handleFileChange}
