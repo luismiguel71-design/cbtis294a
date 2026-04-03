@@ -57,6 +57,20 @@ export default async function Home() {
               <Link href="/admisiones">Proceso de Admisión</Link>
             </Button>
           </div>
+          <div className="mt-10 w-full max-w-4xl mx-auto animate-fade-in-up">
+            <div className="relative aspect-video rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl">
+              <iframe
+                className="h-full w-full"
+                src="https://deevid.ai/web-shared/video/pkPGvNxjoM97z-z0hdrK0SQBr5IqW_fWbVIQJIDYPp6UIr_m?source=share&type=TXT2VIDEO"
+                title="Carrera en Inteligencia Artificial"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+            <p className="mt-4 text-sm md:text-base text-white/80">
+              Descubre el potencial de la Inteligencia Artificial y cómo esta carrera abre puertas a oportunidades profesionales de alto impacto.
+            </p>
+          </div>
         </div>
       </section>
 
