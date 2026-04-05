@@ -166,15 +166,19 @@ export default async function Home() {
             </p>
           </div>
           <div className="flex justify-center">
-             <div className="relative w-64 h-64 md:w-80 md:h-80">
+            <div className="relative w-80 h-80 md:w-[420px] md:h-[420px] lg:w-[520px] lg:h-[520px] rounded-[2rem] overflow-hidden border border-white/20 bg-primary/10 shadow-2xl">
+              <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-primary/20 via-transparent to-slate-900/10" />
+              <div className="absolute inset-6 rounded-[1.75rem] bg-white/10" />
+              <div className="relative w-full h-full p-6">
                 <Image
-                    src={mascot}
-                    alt="Mascota del CBTIS 294"
-                    fill
-                    className="object-contain"
-                    data-ai-hint="school mascot eagle"
+                  src={mascot}
+                  alt="Mascota del CBTIS 294"
+                  fill
+                  className="object-contain"
+                  data-ai-hint="school mascot eagle"
                 />
-             </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
