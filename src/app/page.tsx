@@ -178,11 +178,11 @@ export default async function Home() {
                 </div>
               </div>
             </div>
-            <div className="mx-auto w-full max-w-[580px]">
+            <div className="mx-auto w-full max-w-[760px]">
               <div className="relative rounded-[2rem] overflow-hidden border border-white/20 bg-primary/10 shadow-2xl">
                 <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-primary/20 via-transparent to-slate-900/10" />
                 <div className="absolute inset-6 rounded-[1.75rem] bg-white/10" />
-                <div className="relative w-full h-[520px] p-6">
+                <div className="relative w-full h-[680px] p-6 md:p-8">
                   <Image
                     src={mascot}
                     alt="Mascota del CBTIS 294"
