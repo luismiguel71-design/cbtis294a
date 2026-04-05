@@ -14,22 +14,29 @@ export function HeroVideo({ src, title, description }: HeroVideoProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
 
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
+  const togglePlay = async () => {
+    if (!videoRef.current) return;
+
+    if (isPlaying) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+      return;
+    }
+
+    try {
+      await videoRef.current.play();
+      setIsPlaying(true);
+    } catch (error) {
+      console.warn('No se pudo reproducir el video:', error);
+      setIsPlaying(false);
     }
   };
 
   const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
+    if (!videoRef.current) return;
+    const nextMuted = !isMuted;
+    videoRef.current.muted = nextMuted;
+    setIsMuted(nextMuted);
   };
 
   return (
@@ -39,6 +46,11 @@ export function HeroVideo({ src, title, description }: HeroVideoProps) {
           ref={videoRef}
           src={src}
           className="w-full h-full object-cover"
+          controls
+          playsInline
+          muted={isMuted}
+          preload="metadata"
+          onClick={togglePlay}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
         />
