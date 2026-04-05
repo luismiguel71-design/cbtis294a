@@ -59,7 +59,7 @@ export default async function Home() {
             </Button>
           </div>
           <HeroVideo
-            src="YOUR_VIDEO_URL_HERE"
+            src="https://drive.google.com/uc?export=download&id=1krrZkltd9hEi8ZiTbG1jcG5WBYQSGhyq"
             title="Carrera en Inteligencia Artificial"
             description="Descubre el potencial de la Inteligencia Artificial y cómo esta carrera abre puertas a oportunidades profesionales de alto impacto."
           />
