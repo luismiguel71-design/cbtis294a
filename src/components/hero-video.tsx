@@ -33,7 +33,7 @@ export function HeroVideo({ src, title, description }: HeroVideoProps) {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto animate-fade-in-up">
+    <div className="w-full max-w-3xl mx-auto animate-fade-in-up">
       <div className="relative aspect-video rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl bg-black/50 group">
         <video
           ref={videoRef}

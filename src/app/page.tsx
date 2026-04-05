@@ -29,7 +29,7 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col">
-      <section className="relative h-[60vh] md:h-[70vh] w-full flex items-center justify-center text-center text-white">
+      <section className="relative min-h-[70vh] md:min-h-[80vh] pb-16 md:pb-20 w-full flex items-center justify-center text-center text-white">
         {heroImage && (
           <Image
             src={heroImage.imageUrl}
@@ -58,11 +58,13 @@ export default async function Home() {
               <Link href="/admisiones">Proceso de Admisión</Link>
             </Button>
           </div>
-          <HeroVideo
-            src="https://drive.google.com/uc?export=download&id=1krrZkltd9hEi8ZiTbG1jcG5WBYQSGhyq"
-            title="Carrera en Inteligencia Artificial"
-            description="Descubre el potencial de la Inteligencia Artificial y cómo esta carrera abre puertas a oportunidades profesionales de alto impacto."
-          />
+          <div className="mt-10 w-full">
+            <HeroVideo
+              src="https://drive.google.com/uc?export=download&id=1krrZkltd9hEi8ZiTbG1jcG5WBYQSGhyq"
+              title="Carrera en Inteligencia Artificial"
+              description="Descubre el potencial de la Inteligencia Artificial y cómo esta carrera abre puertas a oportunidades profesionales de alto impacto."
+            />
+          </div>
         </div>
       </section>
 
