@@ -157,26 +157,40 @@ export default async function Home() {
       
       <section className="py-16 md:py-24 bg-primary/5">
         <div className="container px-4 md:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-primary">
-              Nuestro Espíritu
-            </h2>
-            <p className="mt-2 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Nuestra mascota, el águila, representa la visión, la fuerza y la libertad que inspiramos en nuestros estudiantes.
-            </p>
-          </div>
-          <div className="flex justify-center">
-            <div className="relative w-80 h-80 md:w-[420px] md:h-[420px] lg:w-[520px] lg:h-[520px] rounded-[2rem] overflow-hidden border border-white/20 bg-primary/10 shadow-2xl">
-              <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-primary/20 via-transparent to-slate-900/10" />
-              <div className="absolute inset-6 rounded-[1.75rem] bg-white/10" />
-              <div className="relative w-full h-full p-6">
-                <Image
-                  src={mascot}
-                  alt="Mascota del CBTIS 294"
-                  fill
-                  className="object-contain"
-                  data-ai-hint="school mascot eagle"
-                />
+          <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr] items-center">
+            <div>
+              <div className="mb-8 text-center lg:text-left">
+                <h2 className="text-3xl md:text-4xl font-bold text-primary">
+                  Nuestro Espíritu
+                </h2>
+                <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto lg:mx-0">
+                  El águila es nuestro símbolo de identidad: fuerza, visión estratégica y libertad para innovar. Representa el carácter del CBTIS 294 y el compromiso con el crecimiento académico y social de nuestros alumnos.
+                </p>
+              </div>
+              <div className="grid gap-6 text-center lg:text-left lg:grid-cols-2">
+                <div className="rounded-[2rem] border border-white/15 bg-white/10 p-6 shadow-xl backdrop-blur-xl">
+                  <p className="text-sm uppercase tracking-[0.3em] text-primary-100">Misión</p>
+                  <p className="mt-3 text-base text-slate-100">Educar con excelencia técnica y formar estudiantes preparados para enfrentar retos reales.</p>
+                </div>
+                <div className="rounded-[2rem] border border-white/15 bg-white/10 p-6 shadow-xl backdrop-blur-xl">
+                  <p className="text-sm uppercase tracking-[0.3em] text-primary-100">Identidad</p>
+                  <p className="mt-3 text-base text-slate-100">Ser una comunidad de aprendizaje innovadora, responsable y con visión hacia el futuro.</p>
+                </div>
+              </div>
+            </div>
+            <div className="mx-auto w-full max-w-[580px]">
+              <div className="relative rounded-[2rem] overflow-hidden border border-white/20 bg-primary/10 shadow-2xl">
+                <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-primary/20 via-transparent to-slate-900/10" />
+                <div className="absolute inset-6 rounded-[1.75rem] bg-white/10" />
+                <div className="relative w-full h-[520px] p-6">
+                  <Image
+                    src={mascot}
+                    alt="Mascota del CBTIS 294"
+                    fill
+                    className="object-contain"
+                    data-ai-hint="school mascot eagle"
+                  />
+                </div>
               </div>
             </div>
           </div>
