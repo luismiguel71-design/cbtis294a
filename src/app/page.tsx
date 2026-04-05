@@ -15,7 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { HeroVideo } from '@/components/hero-video';
 import { careers } from '@/app/lib/school-data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { getEvents } from '@/lib/firebase/firestore';
@@ -58,12 +57,19 @@ export default async function Home() {
               <Link href="/admisiones">Proceso de Admisión</Link>
             </Button>
           </div>
-          <div className="mt-10 w-full">
-            <HeroVideo
-              src="https://drive.google.com/uc?export=download&id=1krrZkltd9hEi8ZiTbG1jcG5WBYQSGhyq"
-              title="Carrera en Inteligencia Artificial"
-              description="Descubre el potencial de la Inteligencia Artificial y cómo esta carrera abre puertas a oportunidades profesionales de alto impacto."
-            />
+          <div className="mt-10 w-full max-w-4xl mx-auto animate-fade-in-up">
+            <div className="relative aspect-video rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl bg-black">
+              <iframe
+                className="absolute inset-0 h-full w-full"
+                src="https://player.cloudinary.com/embed/?cloud_name=dpqghsf3y&public_id=video_ki857x"
+                title="Video de Inteligencia Artificial"
+                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+            <p className="mt-4 text-sm md:text-base text-white/80 text-center">
+              Descubre el potencial de la Inteligencia Artificial y cómo esta carrera abre puertas a oportunidades profesionales de alto impacto.
+            </p>
           </div>
         </div>
       </section>
