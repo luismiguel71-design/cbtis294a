@@ -45,7 +45,7 @@ export default async function Home() {
             CBTIS No. 294
           </h1>
           <p className="max-w-3xl mx-auto text-lg md:text-xl text-primary-foreground/90 mb-8 animate-fade-in-up">
-            Formando líderes para el futuro tecnológico y de servicios.
+            Formación técnica con visión de futuro, enfocada en Inteligencia Artificial, análisis de datos y servicios profesionales.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 animate-fade-in">
             <Button asChild size="lg">
@@ -57,7 +57,23 @@ export default async function Home() {
               <Link href="/admisiones">Proceso de Admisión</Link>
             </Button>
           </div>
-          <div className="mt-10 w-full max-w-4xl mx-auto animate-fade-in-up">
+
+          <div className="mt-12 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-[2rem] border border-white/15 bg-white/10 p-6 shadow-xl backdrop-blur-xl">
+              <p className="text-xs uppercase tracking-[0.3em] text-primary-100">Aprendizaje activo</p>
+              <p className="mt-4 text-lg font-semibold text-white">Proyectos prácticos con herramientas de IA reales.</p>
+            </div>
+            <div className="rounded-[2rem] border border-white/15 bg-white/10 p-6 shadow-xl backdrop-blur-xl">
+              <p className="text-xs uppercase tracking-[0.3em] text-primary-100">Alta empleabilidad</p>
+              <p className="mt-4 text-lg font-semibold text-white">Carreras alineadas con las necesidades del mercado.</p>
+            </div>
+            <div className="rounded-[2rem] border border-white/15 bg-white/10 p-6 shadow-xl backdrop-blur-xl">
+              <p className="text-xs uppercase tracking-[0.3em] text-primary-100">Apoyo constante</p>
+              <p className="mt-4 text-lg font-semibold text-white">Docentes y laboratorios que te acompañan en cada paso.</p>
+            </div>
+          </div>
+
+          <div className="mt-12 w-full max-w-4xl mx-auto animate-fade-in-up">
             <div className="relative aspect-video rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl bg-black">
               <iframe
                 className="absolute inset-0 h-full w-full"
@@ -68,24 +84,35 @@ export default async function Home() {
               />
             </div>
             <p className="mt-4 text-sm md:text-base text-white/80 text-center">
-              Descubre el potencial de la Inteligencia Artificial y cómo esta carrera abre puertas a oportunidades profesionales de alto impacto.
-            </p>
+              Ve cómo se vive la carrera de IA en CBTIS 294 y conoce el impacto de nuestros programas.</p>
           </div>
         </div>
       </section>
 
-      <section id="carreras" className="py-16 md:py-24">
+      <section id="carreras" className="py-20 md:py-28 bg-slate-50">
         <div className="container px-4 md:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-primary">
-              Oferta Educativa
-            </h2>
-            <p className="mt-2 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Explora nuestras carreras técnicas diseñadas para el éxito
-              profesional en industrias de alta demanda.
-            </p>
+          <div className="grid gap-8 lg:grid-cols-[1.3fr_0.9fr] items-center mb-12">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+                Oferta Educativa
+              </h2>
+              <p className="mt-4 text-lg text-slate-600 max-w-2xl">
+                Conoce nuestras carreras técnicas con enfoque en tecnologías emergentes, datos y servicios, diseñadas para preparar a los estudiantes para el mundo laboral.
+              </p>
+            </div>
+            <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-lg">
+              <p className="text-sm uppercase tracking-[0.3em] text-primary-600">Programa destacado</p>
+              <h3 className="mt-4 text-2xl font-bold text-slate-900">Técnico en Inteligencia Artificial</h3>
+              <p className="mt-3 text-slate-600">
+                Desarrolla soluciones inteligentes y visualiza datos para transformar procesos y construir productos tecnológicos con impacto.
+              </p>
+              <Button asChild variant="secondary" className="mt-6">
+                <Link href="/carreras/inteligencia-artificial">Ver detalles</Link>
+              </Button>
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+
+          <div className="grid gap-8 lg:grid-cols-3">
             {careers.map((career) => {
               const careerImage = PlaceHolderImages.find((img) => img.id === career.image);
               return (
@@ -94,7 +121,7 @@ export default async function Home() {
                   className="overflow-hidden transform hover:-translate-y-2 transition-transform duration-300 ease-in-out shadow-lg hover:shadow-2xl"
                 >
                   {careerImage && (
-                    <div className="relative h-48 w-full">
+                    <div className="relative h-52 w-full">
                       <Image
                         src={careerImage.imageUrl}
                         alt={career.title}
@@ -104,16 +131,20 @@ export default async function Home() {
                       />
                     </div>
                   )}
-                  <CardHeader>
-                    <CardTitle className="text-primary">{career.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="line-clamp-3">
-                      {career.description}
-                    </CardDescription>
-                    <Button asChild variant="link" className="px-0 mt-4">
+                  <CardContent className="space-y-5 p-6">
+                    <div>
+                      <CardTitle className="text-primary">{career.title}</CardTitle>
+                      <CardDescription className="mt-3 text-sm text-slate-600 line-clamp-4">
+                        {career.description}
+                      </CardDescription>
+                    </div>
+                    <div className="rounded-3xl bg-primary/5 p-4 text-sm text-slate-700">
+                      <p className="font-semibold">Perfil de egreso</p>
+                      <p className="mt-2 text-slate-600 line-clamp-3">{career.graduateProfile}</p>
+                    </div>
+                    <Button asChild variant="outline" className="w-full">
                       <Link href={`/carreras/${career.slug}`}>
-                        Saber más <ArrowRight className="ml-1" />
+                        Ver carrera <ArrowRight className="ml-2" />
                       </Link>
                     </Button>
                   </CardContent>
