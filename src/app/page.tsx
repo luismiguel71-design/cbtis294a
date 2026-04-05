@@ -164,7 +164,7 @@ export default async function Home() {
                   Nuestro Espíritu
                 </h2>
                 <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto lg:mx-0">
-                  El águila es nuestro símbolo de identidad: fuerza, visión estratégica y libertad para innovar. Representa el carácter del CBTIS 294 y el compromiso con el crecimiento académico y social de nuestros alumnos.
+                  El guerrero Xoloitzcuintle es nuestro símbolo de identidad: fuerza, visión estratégica y libertad para innovar. Representa el carácter del CBTIS 294 y el compromiso con el crecimiento académico y social de nuestros alumnos.
                 </p>
               </div>
               <div className="grid gap-6 text-center lg:text-left lg:grid-cols-2">
