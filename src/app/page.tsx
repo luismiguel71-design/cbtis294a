@@ -79,7 +79,7 @@ export default async function Home() {
                 className="absolute inset-0 h-full w-full"
                 src="https://player.cloudinary.com/embed/?cloud_name=dpqghsf3y&public_id=video_ki857x"
                 title="Video de Inteligencia Artificial"
-                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                allow="fullscreen; encrypted-media; picture-in-picture"
                 allowFullScreen
               />
             </div>
