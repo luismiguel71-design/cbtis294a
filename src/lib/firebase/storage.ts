@@ -20,14 +20,17 @@ function fileToBase64(file: File): Promise<string> {
  * Has a timeout to prevent hanging.
  */
 export async function uploadFile(file: File, path: string): Promise<string> {
-    // Validate file size (max 2MB to keep Firestore happy with base64 fallback)
-    const MAX_SIZE_MB = 2;
+    // Validate file size (max 50MB for flexibility with videos and large files)
+    const MAX_SIZE_MB = 50;
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-        throw new Error(`La imagen no debe superar ${MAX_SIZE_MB}MB. Usa una URL externa para imágenes más grandes.`);
+        throw new Error(`El archivo no debe superar ${MAX_SIZE_MB}MB.`);
     }
 
     if (!storage) {
-        // No Firebase Storage configured — use base64
+        // No Firebase Storage configured — use base64 only for files under 2MB
+        if (file.size > 2 * 1024 * 1024) {
+            throw new Error('Firebase Storage no está configurado. Archivo demasiado grande para base64.');
+        }
         return fileToBase64(file);
     }
 

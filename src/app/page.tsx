@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { HeroVideo } from '@/components/hero-video';
 import { careers } from '@/app/lib/school-data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { getEvents } from '@/lib/firebase/firestore';
@@ -57,6 +58,11 @@ export default async function Home() {
               <Link href="/admisiones">Proceso de Admisión</Link>
             </Button>
           </div>
+          <HeroVideo
+            src="YOUR_VIDEO_URL_HERE"
+            title="Carrera en Inteligencia Artificial"
+            description="Descubre el potencial de la Inteligencia Artificial y cómo esta carrera abre puertas a oportunidades profesionales de alto impacto."
+          />
         </div>
       </section>
 
