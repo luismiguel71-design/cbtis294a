@@ -2,13 +2,14 @@
 
 import { collection, query, orderBy, limit, getDocs, getDoc, doc, addDoc, Timestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from './client';
-import type { Evento, Docente } from '../types';
+import type { Evento, Docente, Alumno } from '../types';
 
 // Mock storage for demo purposes when Firebase is not configured using globalThis
-const globalForFirebase = globalThis as unknown as { mockEvents: Evento[], mockSchedules: any[], mockDocentes: Docente[] };
+const globalForFirebase = globalThis as unknown as { mockEvents: Evento[], mockSchedules: any[], mockDocentes: Docente[], mockAlumnos: Alumno[] };
 if (!globalForFirebase.mockEvents) globalForFirebase.mockEvents = [];
 if (!globalForFirebase.mockSchedules) globalForFirebase.mockSchedules = [];
 if (!globalForFirebase.mockDocentes) globalForFirebase.mockDocentes = [];
+if (!globalForFirebase.mockAlumnos) globalForFirebase.mockAlumnos = [];
 
 export async function getEvents(count?: number): Promise<Evento[]> {
   if (!db) {
@@ -192,5 +193,68 @@ export async function deleteDocente(id: string) {
     } catch (error) {
         console.error("Error deleting docente:", error);
         throw new Error("No se pudo eliminar el docente.");
+    }
+}
+
+// --- ALUMNOS CRUD ---
+
+export async function getAlumnos(): Promise<Alumno[]> {
+    if (!db) {
+        return globalForFirebase.mockAlumnos;
+    }
+    try {
+        const snapshot = await getDocs(collection(db, 'alumnos'));
+        const alumnos: Alumno[] = [];
+        snapshot.forEach((doc) => {
+            alumnos.push({ id: doc.id, ...doc.data() } as Alumno);
+        });
+        return alumnos;
+    } catch (error) {
+        console.error("Error getting alumnos:", error);
+        return [];
+    }
+}
+
+export async function addAlumno(data: Omit<Alumno, 'id'>) {
+    if (!db) {
+        const newAlumno: Alumno = {
+            ...data,
+            id: Math.random().toString(36).substr(2, 9),
+        };
+        globalForFirebase.mockAlumnos = [...globalForFirebase.mockAlumnos, newAlumno];
+        return newAlumno.id;
+    }
+    try {
+        const docRef = await addDoc(collection(db, 'alumnos'), data);
+        return docRef.id;
+    } catch (error) {
+        console.error("Error adding alumno:", error);
+        throw new Error("No se pudo agregar el alumno.");
+    }
+}
+
+export async function updateAlumno(id: string, data: Partial<Alumno>) {
+    if (!db) {
+        globalForFirebase.mockAlumnos = globalForFirebase.mockAlumnos.map(a => a.id === id ? { ...a, ...data } : a);
+        return;
+    }
+    try {
+        await updateDoc(doc(db, 'alumnos', id), data);
+    } catch (error) {
+        console.error("Error updating alumno:", error);
+        throw new Error("No se pudo actualizar el alumno.");
+    }
+}
+
+export async function deleteAlumno(id: string) {
+    if (!db) {
+        globalForFirebase.mockAlumnos = globalForFirebase.mockAlumnos.filter(a => a.id !== id);
+        return;
+    }
+    try {
+        await deleteDoc(doc(db, 'alumnos', id));
+    } catch (error) {
+        console.error("Error deleting alumno:", error);
+        throw new Error("No se pudo eliminar el alumno.");
     }
 }

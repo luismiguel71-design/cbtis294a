@@ -79,6 +79,9 @@ export default function Header() {
               <Link href="/admin/horarios" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden md:flex")}>
                 Horarios
               </Link>
+              <Link href="/admin/credenciales" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden md:flex")}>
+                Credenciales
+              </Link>
               <Button onClick={handleLogout} variant="outline" size="sm">Salir</Button>
             </div>
           ) : (
@@ -135,6 +138,13 @@ export default function Header() {
                     className="block rounded-md px-3 py-2 text-base font-medium text-primary hover:bg-accent"
                   >
                     Generar Horarios
+                  </Link>
+                  <Link
+                    href="/admin/credenciales"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block rounded-md px-3 py-2 text-base font-medium text-primary hover:bg-accent"
+                  >
+                    Generar Credenciales
                   </Link>
                 </div>
               </>

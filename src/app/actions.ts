@@ -3,7 +3,7 @@
 
 import { educativeChatbot } from '@/ai/flows/educative-chatbot-flow';
 import { z } from 'zod';
-import { addEvent, deleteEvent, updateEvent, addSchedule, getLatestSchedule, addDocente, updateDocente, deleteDocente } from '@/lib/firebase/firestore';
+import { addEvent, deleteEvent, updateEvent, addSchedule, getLatestSchedule, addDocente, updateDocente, deleteDocente, addAlumno, updateAlumno, deleteAlumno } from '@/lib/firebase/firestore';
 import { signInUser } from '@/lib/firebase/auth';
 import { revalidatePath } from 'next/cache';
 import { generateSchedule, type ScheduleGeneratorInput } from '@/ai/flows/schedule-generator-flow';
@@ -276,5 +276,56 @@ export async function seedDocentesAction() {
     } catch (error) {
         console.error("Error seeding docentes:", error);
         return { error: "No se pudieron precargar los docentes." };
+    }
+}
+
+// --- ALUMNOS ACTIONS ---
+
+const alumnoSchema = z.object({
+    nombre: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
+    carrera: z.string().min(1, 'La carrera es requerida.'),
+    grado: z.string().min(1, 'El grado es requerido.'),
+    grupo: z.string().min(1, 'El grupo es requerido.'),
+    fotografia: z.string().url('URL de foto inválida.').optional().or(z.literal('')),
+});
+
+export async function addAlumnoAction(values: z.infer<typeof alumnoSchema>) {
+    const validatedFields = alumnoSchema.safeParse(values);
+    if (!validatedFields.success) {
+        return { error: "Datos inválidos." };
+    }
+    try {
+        const alumnoId = await addAlumno({
+            ...validatedFields.data,
+            createdAt: new Date().toISOString(),
+        });
+        revalidatePath('/admin/credenciales');
+        return { success: "Alumno agregado exitosamente.", alumnoId };
+    } catch (error) {
+        return { error: "No se pudo agregar el alumno." };
+    }
+}
+
+export async function updateAlumnoAction(id: string, values: z.infer<typeof alumnoSchema>) {
+    const validatedFields = alumnoSchema.safeParse(values);
+    if (!validatedFields.success) {
+        return { error: "Datos inválidos." };
+    }
+    try {
+        await updateAlumno(id, validatedFields.data);
+        revalidatePath('/admin/credenciales');
+        return { success: "Alumno actualizado exitosamente." };
+    } catch (error) {
+        return { error: "No se pudo actualizar el alumno." };
+    }
+}
+
+export async function deleteAlumnoAction(id: string) {
+    try {
+        await deleteAlumno(id);
+        revalidatePath('/admin/credenciales');
+        return { success: "Alumno eliminado exitosamente." };
+    } catch (error) {
+        return { error: "No se pudo eliminar el alumno." };
     }
 }

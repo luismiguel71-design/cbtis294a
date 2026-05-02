@@ -17,3 +17,13 @@ export interface Docente {
     imageUrl?: string;
     status: 'activo' | 'inactivo';
 }
+
+export interface Alumno {
+    id: string;
+    nombre: string;
+    carrera: string;
+    grado: string;
+    grupo: string;
+    fotografia?: string;
+    createdAt: string;
+}
