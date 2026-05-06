@@ -50,6 +50,7 @@ import { getCurrentUser } from '@/lib/firebase/auth';
 import { User } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { isFirebaseConfigured } from '@/lib/firebase/client';
 
 // Schema now only manages subjects — teachers come from Firebase Docentes
 const scheduleFormSchema = z.object({

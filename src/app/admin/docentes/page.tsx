@@ -48,6 +48,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { addDocenteAction, deleteDocenteAction, updateDocenteAction, seedDocentesAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import { isFirebaseConfigured } from '@/lib/firebase/client';
 
 const docenteFormSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
@@ -226,6 +227,19 @@ export default function AdminDocentesPage() {
       <Loader2 className="h-12 w-12 animate-spin text-primary" />
     </div>
   );
+
+  if (!isFirebaseConfigured) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen text-center">
+        <div className="mb-4">
+          <Loader2 className="h-8 w-8 animate-spin text-red-500" />
+        </div>
+        <h2 className="text-xl font-bold text-red-600 mb-2">Error de configuración de Firebase</h2>
+        <p className="text-gray-700">No se detectó la configuración de Firebase.<br />
+        Verifica que todas las variables de entorno de Firebase estén definidas en Vercel y vuelve a desplegar la aplicación.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container py-10">

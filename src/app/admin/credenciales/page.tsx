@@ -8,6 +8,7 @@ import { uploadFile } from '@/lib/firebase/storage';
 import { Alumno } from '@/lib/types';
 import Image from 'next/image';
 import { getCurrentUser } from '@/lib/firebase/auth';
+import { isFirebaseConfigured } from '@/lib/firebase/client';
 import {
   Dialog,
   DialogContent,
@@ -107,6 +108,7 @@ export default function CredencialesPage() {
   });
 
   useEffect(() => {
+    if (!isFirebaseConfigured) return;
     const checkAuth = async () => {
       const user = await getCurrentUser();
       if (!user) {
@@ -276,6 +278,18 @@ export default function CredencialesPage() {
     }
   };
 
+  if (!isFirebaseConfigured) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen text-center">
+        <div className="mb-4">
+          <Loader2 className="h-8 w-8 animate-spin text-red-500" />
+        </div>
+        <h2 className="text-xl font-bold text-red-600 mb-2">Error de configuración de Firebase</h2>
+        <p className="text-gray-700">No se detectó la configuración de Firebase.<br />
+        Verifica que todas las variables de entorno de Firebase estén definidas en Vercel y vuelve a desplegar la aplicación.</p>
+      </div>
+    );
+  }
   if (!isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-screen">
