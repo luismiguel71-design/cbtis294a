@@ -88,6 +88,7 @@ export default function CredencialesPage() {
   const { toast } = useToast();
   const [alumnos, setAlumnos] = useState<Alumno[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadTimeout, setLoadTimeout] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -122,6 +123,12 @@ export default function CredencialesPage() {
       }
     };
     checkAuth();
+    // Timeout para mostrar error si la carga tarda más de 7 segundos
+    const timeout = setTimeout(() => {
+      setLoadTimeout(true);
+      setIsLoading(false);
+    }, 7000);
+    return () => clearTimeout(timeout);
   }, [router]);
 
   const loadAlumnos = async () => {
@@ -300,6 +307,15 @@ export default function CredencialesPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+  if (loadTimeout) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen text-center">
+        <h2 className="text-xl font-bold text-red-600 mb-2">No se pudo cargar la información</h2>
+        <p className="text-gray-700">La carga de alumnos está tardando demasiado o hubo un problema de conexión.<br />
+        Intenta recargar la página o verifica tu conexión.</p>
       </div>
     );
   }
