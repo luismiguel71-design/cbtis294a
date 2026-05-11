@@ -297,7 +297,7 @@ export default function CredencialesPage() {
         <div className="mb-4">
           <Loader2 className="h-8 w-8 animate-spin text-red-500" />
         </div>
-        <h2 className="text-xl font-bold text-red-600 mb-2">Error de configuración de Firebase</h2>
+        <h2 className="text-xl font-bold text-red-600 mb-2">[VISUAL LOG] Error de configuración de Firebase</h2>
         <p className="text-gray-700">No se detectó la configuración de Firebase.<br />
         Verifica que todas las variables de entorno de Firebase estén definidas en Vercel y vuelve a desplegar la aplicación.</p>
       </div>
@@ -305,17 +305,26 @@ export default function CredencialesPage() {
   }
   if (!isAuthenticated) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center justify-center min-h-screen text-center">
         <Loader2 className="h-8 w-8 animate-spin" />
+        <h2 className="text-xl font-bold text-blue-600 mt-4">[VISUAL LOG] Esperando autenticación...</h2>
       </div>
     );
   }
   if (loadTimeout) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-center">
-        <h2 className="text-xl font-bold text-red-600 mb-2">No se pudo cargar la información</h2>
+        <h2 className="text-xl font-bold text-red-600 mb-2">[VISUAL LOG] Timeout: No se pudo cargar la información</h2>
         <p className="text-gray-700">La carga de alumnos está tardando demasiado o hubo un problema de conexión.<br />
         Intenta recargar la página o verifica tu conexión.</p>
+      </div>
+    );
+  }
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <h2 className="text-xl font-bold text-blue-600 mt-4">[VISUAL LOG] Cargando alumnos...</h2>
       </div>
     );
   }
