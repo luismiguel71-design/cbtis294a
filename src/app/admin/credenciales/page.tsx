@@ -110,10 +110,13 @@ export default function CredencialesPage() {
   useEffect(() => {
     if (!isFirebaseConfigured) return;
     const checkAuth = async () => {
+      console.log('[Credenciales] Verificando autenticación...');
       const user = await getCurrentUser();
       if (!user) {
+        console.log('[Credenciales] Usuario no autenticado, redirigiendo a /login');
         router.push('/login');
       } else {
+        console.log('[Credenciales] Usuario autenticado:', user);
         setIsAuthenticated(true);
         loadAlumnos();
       }
@@ -123,17 +126,20 @@ export default function CredencialesPage() {
 
   const loadAlumnos = async () => {
     try {
+      console.log('[Credenciales] Cargando alumnos...');
       setIsLoading(true);
       const data = await getAlumnos();
+      console.log('[Credenciales] Alumnos obtenidos:', data);
       setAlumnos(data);
     } catch (error) {
-      console.error('Error loading alumnos:', error);
+      console.error('[Credenciales] Error loading alumnos:', error);
       toast({
         title: 'Error',
         description: 'No se pudieron cargar los alumnos.',
         variant: 'destructive',
       });
     } finally {
+      console.log('[Credenciales] Terminó carga de alumnos, setIsLoading(false)');
       setIsLoading(false);
     }
   };
