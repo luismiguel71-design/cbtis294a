@@ -2,6 +2,7 @@
 
 import { collection, query, orderBy, limit, getDocs, getDoc, doc, addDoc, Timestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from './client';
+import { adminDb } from './admin';
 import type { Evento, Docente, Alumno } from '../types';
 
 // Mock storage for demo purposes when Firebase is not configured using globalThis
@@ -203,12 +204,11 @@ export async function getAlumnos(): Promise<Alumno[]> {
         return globalForFirebase.mockAlumnos;
     }
     try {
-        const snapshot = await getDocs(collection(db, 'alumnos'));
-        const alumnos: Alumno[] = [];
-        snapshot.forEach((doc) => {
-            alumnos.push({ id: doc.id, ...doc.data() } as Alumno);
-        });
-        return alumnos;
+        const snapshot = await adminDb.collection('alumnos').get();
+        return snapshot.docs.map(doc => ({ 
+            id: doc.id, 
+            ...doc.data() 
+        } as Alumno));
     } catch (error) {
         console.error("Error getting alumnos:", error);
         return [];
@@ -225,7 +225,7 @@ export async function addAlumno(data: Omit<Alumno, 'id'>) {
         return newAlumno.id;
     }
     try {
-        const docRef = await addDoc(collection(db, 'alumnos'), data);
+        const docRef = await adminDb.collection('alumnos').add(data);
         return docRef.id;
     } catch (error) {
         console.error("[Firestore] Error adding alumno:", error);
@@ -239,7 +239,7 @@ export async function updateAlumno(id: string, data: Partial<Alumno>) {
         return;
     }
     try {
-        await updateDoc(doc(db, 'alumnos', id), data);
+        await adminDb.collection('alumnos').doc(id).update(data);
     } catch (error) {
         console.error("[Firestore] Error updating alumno:", error);
         throw error;
@@ -252,7 +252,7 @@ export async function deleteAlumno(id: string) {
         return;
     }
     try {
-        await deleteDoc(doc(db, 'alumnos', id));
+        await adminDb.collection('alumnos').doc(id).delete();
     } catch (error) {
         console.error("[Firestore] Error deleting alumno:", error);
         throw error;
