@@ -218,7 +218,7 @@ const docenteSchema = z.object({
     name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
     specialty: z.string().min(3, 'La especialidad es requerida.'),
     email: z.string().email('Email inválido.'),
-    imageUrl: z.string().url('URL de imagen inválida (opcional).').optional().or(z.literal('')),
+    imageUrl: z.string().optional().or(z.literal('')).nullable(),
     status: z.enum(['activo', 'inactivo']),
 });
 
@@ -286,7 +286,7 @@ const alumnoSchema = z.object({
     carrera: z.string().min(1, 'La carrera es requerida.'),
     grado: z.string().min(1, 'El grado es requerido.'),
     grupo: z.string().min(1, 'El grupo es requerido.'),
-    fotografia: z.string().optional().or(z.literal('')),
+    fotografia: z.any().optional(),
 });
 
 export async function addAlumnoAction(values: z.infer<typeof alumnoSchema>) {
@@ -306,20 +306,27 @@ export async function addAlumnoAction(values: z.infer<typeof alumnoSchema>) {
     }
 }
 
-export async function updateAlumnoAction(id: string, values: z.infer<typeof alumnoSchema>) {
+export async function updateAlumnoAction(id: string, values: any) {
     const validatedFields = alumnoSchema.safeParse(values);
     if (!validatedFields.success) {
+        console.error("[UpdateAlumnoAction] Error de validación:", validatedFields.error.flatten());
         return { error: "Datos inválidos." };
     }
     try {
-        // Eliminamos campos undefined para evitar que Firebase rechace la actualización
-        const updateData = JSON.parse(JSON.stringify(validatedFields.data));
+        // Creamos una copia limpia de los datos
+        const updateData = { ...validatedFields.data };
+        
+        // Eliminamos campos undefined para evitar errores en Firestore
+        Object.keys(updateData).forEach(key => 
+            (updateData as any)[key] === undefined && delete (updateData as any)[key]
+        );
+
         await updateAlumno(id, updateData);
         revalidatePath('/admin/credenciales');
         return { success: "Alumno actualizado exitosamente." };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error en updateAlumnoAction:", error);
-        return { error: "No se pudo actualizar el alumno." };
+        return { error: error.message || "No se pudo actualizar el alumno." };
     }
 }
 
