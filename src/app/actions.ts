@@ -286,7 +286,7 @@ const alumnoSchema = z.object({
     carrera: z.string().min(1, 'La carrera es requerida.'),
     grado: z.string().min(1, 'El grado es requerido.'),
     grupo: z.string().min(1, 'El grupo es requerido.'),
-    fotografia: z.string().url('URL de foto inválida.').optional().or(z.literal('')),
+    fotografia: z.string().optional().or(z.literal('')),
 });
 
 export async function addAlumnoAction(values: z.infer<typeof alumnoSchema>) {
@@ -312,10 +312,13 @@ export async function updateAlumnoAction(id: string, values: z.infer<typeof alum
         return { error: "Datos inválidos." };
     }
     try {
-        await updateAlumno(id, validatedFields.data);
+        // Eliminamos campos undefined para evitar que Firebase rechace la actualización
+        const updateData = JSON.parse(JSON.stringify(validatedFields.data));
+        await updateAlumno(id, updateData);
         revalidatePath('/admin/credenciales');
         return { success: "Alumno actualizado exitosamente." };
     } catch (error) {
+        console.error("Error en updateAlumnoAction:", error);
         return { error: "No se pudo actualizar el alumno." };
     }
 }
