@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { uploadFile } from '@/lib/firebase/storage';
 import { Alumno } from '@/lib/types';
 import Image from 'next/image';
 import { getCurrentUser } from '@/lib/firebase/auth';
+import { User } from 'firebase/auth';
 import { isFirebaseConfigured } from '@/lib/firebase/client';
 import {
   Dialog,
@@ -87,13 +88,12 @@ export default function CredencialesPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [alumnos, setAlumnos] = useState<Alumno[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadTimeout, setLoadTimeout] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteAlumnoId, setDeleteAlumnoId] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -111,14 +111,6 @@ export default function CredencialesPage() {
 
   useEffect(() => {
     if (!isFirebaseConfigured) return;
-    const checkAuth = async () => {
-      console.log('[Credenciales] Verificando autenticación...');
-      const user = await getCurrentUser();
-      if (!user) {
-        console.log('[Credenciales] Usuario no autenticado, redirigiendo a /login');
-        router.push('/login');
-      } else {
-        console.log('[Credenciales] Usuario autenticado:', user);
 
     const unsubscribe = getCurrentUser((user) => {
       if (user) {
@@ -127,17 +119,13 @@ export default function CredencialesPage() {
       } else {
         router.push('/login');
       }
-    };
-    checkAuth();
       setAuthLoading(false);
     });
 
     // Timeout para mostrar error si la carga tarda más de 7 segundos
     const timeout = setTimeout(() => {
       setLoadTimeout(true);
-      setIsLoading(false);
     }, 7000);
-    return () => clearTimeout(timeout);
 
     return () => {
       unsubscribe();
@@ -317,8 +305,7 @@ export default function CredencialesPage() {
       </div>
     );
   }
-  if (!isAuthenticated) {
-  if (authLoading || !isAuthenticated) {
+  if (authLoading || !user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -326,16 +313,7 @@ export default function CredencialesPage() {
       </div>
     );
   }
-  if (loadTimeout) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen text-center">
-        <h2 className="text-xl font-bold text-red-600 mb-2">[VISUAL LOG] Timeout: No se pudo cargar la información</h2>
-        <p className="text-gray-700">La carga de alumnos está tardando demasiado o hubo un problema de conexión.<br />
-        Intenta recargar la página o verifica tu conexión.</p>
-      </div>
-    );
-  }
-  if (isLoading) {
+  if (isLoading && alumnos.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-center">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
