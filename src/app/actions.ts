@@ -309,24 +309,29 @@ export async function addAlumnoAction(values: z.infer<typeof alumnoSchema>) {
 export async function updateAlumnoAction(id: string, values: any) {
     const validatedFields = alumnoSchema.safeParse(values);
     if (!validatedFields.success) {
-        console.error("[UpdateAlumnoAction] Error de validación:", validatedFields.error.flatten());
-        return { error: "Datos inválidos." };
+        const errors = validatedFields.error.flatten().fieldErrors;
+        console.error("[UpdateAlumnoAction] Error de validación:", errors);
+        return { error: `Datos inválidos: ${Object.keys(errors).join(', ')}` };
     }
     try {
-        // Creamos una copia limpia de los datos
-        const updateData = { ...validatedFields.data };
-        
-        // Eliminamos campos undefined para evitar errores en Firestore
-        Object.keys(updateData).forEach(key => 
-            (updateData as any)[key] === undefined && delete (updateData as any)[key]
-        );
+        // Extraemos los datos validados
+        const rawData = validatedFields.data;
+        const updateData: any = {};
+
+        // Solo incluimos campos que no sean undefined o null
+        for (const key in rawData) {
+            if (rawData[key] !== undefined && rawData[key] !== null) {
+                updateData[key] = rawData[key];
+            }
+        }
 
         await updateAlumno(id, updateData);
         revalidatePath('/admin/credenciales');
         return { success: "Alumno actualizado exitosamente." };
     } catch (error: any) {
-        console.error("Error en updateAlumnoAction:", error);
-        return { error: error.message || "No se pudo actualizar el alumno." };
+        console.error("[UpdateAlumnoAction] Error crítico:", error);
+        // Retornamos el mensaje real (ej: "Missing or insufficient permissions")
+        return { error: error.message || "Error interno al actualizar en la base de datos." };
     }
 }
 

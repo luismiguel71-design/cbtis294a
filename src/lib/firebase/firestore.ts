@@ -228,8 +228,8 @@ export async function addAlumno(data: Omit<Alumno, 'id'>) {
         const docRef = await addDoc(collection(db, 'alumnos'), data);
         return docRef.id;
     } catch (error) {
-        console.error("Error adding alumno:", error);
-        throw new Error("No se pudo agregar el alumno.");
+        console.error("[Firestore] Error adding alumno:", error);
+        throw error;
     }
 }
 
@@ -241,8 +241,8 @@ export async function updateAlumno(id: string, data: Partial<Alumno>) {
     try {
         await updateDoc(doc(db, 'alumnos', id), data);
     } catch (error) {
-        console.error("Error updating alumno:", error);
-        throw new Error("No se pudo actualizar el alumno.");
+        console.error("[Firestore] Error updating alumno:", error);
+        throw error;
     }
 }
 
@@ -254,7 +254,7 @@ export async function deleteAlumno(id: string) {
     try {
         await deleteDoc(doc(db, 'alumnos', id));
     } catch (error) {
-        console.error("Error deleting alumno:", error);
-        throw new Error("No se pudo eliminar el alumno.");
+        console.error("[Firestore] Error deleting alumno:", error);
+        throw error;
     }
 }
