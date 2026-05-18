@@ -3,7 +3,9 @@ import { adminFirebaseConfig } from './config';
 
 if (!admin.apps.length) {
   try {
-    admin.initializeApp(adminFirebaseConfig);
+    admin.initializeApp({
+      credential: admin.credential.cert(adminFirebaseConfig.credential)
+    });
   } catch (error) {
     console.error('Firebase admin initialization error', error);
   }

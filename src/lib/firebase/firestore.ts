@@ -1,6 +1,5 @@
 'use server';
 
-import { collection, query, orderBy, limit, getDocs, getDoc, doc, addDoc, Timestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from './client';
 import { adminDb } from './admin';
 import type { Evento, Docente, Alumno } from '../types';
@@ -17,12 +16,10 @@ export async function getEvents(count?: number): Promise<Evento[]> {
     return count ? globalForFirebase.mockEvents.slice(0, count) : globalForFirebase.mockEvents;
   }
   try {
-    const eventsCollection = collection(db, 'events');
-    const q = count 
-      ? query(eventsCollection, orderBy('date', 'desc'), limit(count))
-      : query(eventsCollection, orderBy('date', 'desc'));
+    let queryRef = adminDb.collection('events').orderBy('date', 'desc');
+    if (count) queryRef = queryRef.limit(count) as any;
 
-    const snapshot = await getDocs(q);
+    const snapshot = await queryRef.get();
     if (snapshot.empty) return [];
 
     const events: Evento[] = [];
@@ -32,7 +29,8 @@ export async function getEvents(count?: number): Promise<Evento[]> {
             id: doc.id,
             title: data.title,
             description: data.description,
-            date: data.date instanceof Timestamp ? data.date.toDate().toISOString() : new Date().toISOString(),
+            // Los Timestamps del Admin SDK tienen un método toDate() similar
+            date: data.date && typeof data.date.toDate === 'function' ? data.date.toDate().toISOString() : new Date().toISOString(),
             imageUrl: data.imageUrl,
         });
     });
@@ -46,15 +44,14 @@ export async function getEvents(count?: number): Promise<Evento[]> {
 export async function getEvent(id: string): Promise<Evento | null> {
     if (!db) return globalForFirebase.mockEvents.find(e => e.id === id) || null;
     try {
-        const docRef = doc(db, 'events', id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const data = docSnap.data();
+        const docSnap = await adminDb.collection('events').doc(id).get();
+        if (docSnap.exists) {
+            const data = docSnap.data()!;
             return {
                 id: docSnap.id,
                 title: data.title,
                 description: data.description,
-                date: data.date instanceof Timestamp ? data.date.toDate().toISOString() : new Date().toISOString(),
+                date: data.date && typeof data.date.toDate === 'function' ? data.date.toDate().toISOString() : new Date().toISOString(),
                 imageUrl: data.imageUrl,
             };
         } else return null;
@@ -75,7 +72,7 @@ export async function addEvent(data: { title: string; description: string; image
         return;
     }
     try {
-        await addDoc(collection(db, 'events'), { ...data, date: Timestamp.now() });
+        await adminDb.collection('events').add({ ...data, date: new Date() });
     } catch (error) {
         console.error("Error adding document: ", error);
         throw new Error("No se pudo crear el evento.");
@@ -88,7 +85,7 @@ export async function updateEvent(id: string, data: { title: string; description
         return;
     }
     try {
-        await updateDoc(doc(db, 'events', id), data);
+        await adminDb.collection('events').doc(id).update(data);
     } catch (error) {
         console.error("Error updating document: ", error);
         throw new Error("No se pudo actualizar el evento.");
@@ -101,7 +98,7 @@ export async function deleteEvent(id: string) {
         return;
     }
     try {
-        await deleteDoc(doc(db, 'events', id));
+        await adminDb.collection('events').doc(id).delete();
     } catch (error) {
         console.error("Error deleting document: ", error);
         throw new Error("No se pudo eliminar el evento.");
@@ -114,7 +111,7 @@ export async function addSchedule(schedule: any) {
         return;
     }
     try {
-        await addDoc(collection(db, 'schedules'), { schedule, timestamp: Timestamp.now() });
+        await adminDb.collection('schedules').add({ schedule, timestamp: new Date() });
     } catch (error) {
         console.error("Error adding schedule: ", error);
     }
@@ -125,8 +122,7 @@ export async function getLatestSchedule() {
         return globalForFirebase.mockSchedules.length > 0 ? globalForFirebase.mockSchedules[globalForFirebase.mockSchedules.length - 1] : null;
     }
     try {
-        const q = query(collection(db, 'schedules'), orderBy('timestamp', 'desc'), limit(1));
-        const snapshot = await getDocs(q);
+        const snapshot = await adminDb.collection('schedules').orderBy('timestamp', 'desc').limit(1).get();
         if (!snapshot.empty) return snapshot.docs[0].data();
         return null;
     } catch (error) {
@@ -142,7 +138,7 @@ export async function getDocentes(): Promise<Docente[]> {
         return globalForFirebase.mockDocentes;
     }
     try {
-        const snapshot = await getDocs(collection(db, 'docentes'));
+        const snapshot = await adminDb.collection('docentes').get();
         const docentes: Docente[] = [];
         snapshot.forEach((doc) => {
             docentes.push({ id: doc.id, ...doc.data() } as Docente);
@@ -164,7 +160,7 @@ export async function addDocente(data: Omit<Docente, 'id'>) {
         return;
     }
     try {
-        await addDoc(collection(db, 'docentes'), data);
+        await adminDb.collection('docentes').add(data);
     } catch (error) {
         console.error("Error adding docente:", error);
         throw new Error("No se pudo agregar el docente.");
@@ -177,7 +173,7 @@ export async function updateDocente(id: string, data: Partial<Docente>) {
         return;
     }
     try {
-        await updateDoc(doc(db, 'docentes', id), data);
+        await adminDb.collection('docentes').doc(id).update(data);
     } catch (error) {
         console.error("Error updating docente:", error);
         throw new Error("No se pudo actualizar el docente.");
@@ -190,7 +186,7 @@ export async function deleteDocente(id: string) {
         return;
     }
     try {
-        await deleteDoc(doc(db, 'docentes', id));
+        await adminDb.collection('docentes').doc(id).delete();
     } catch (error) {
         console.error("Error deleting docente:", error);
         throw new Error("No se pudo eliminar el docente.");
