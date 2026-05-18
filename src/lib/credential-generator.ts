@@ -34,25 +34,29 @@ export async function generateCredentialImage(alumno: {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
 
-    // Border
-    ctx.strokeStyle = 'white';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(10, 10, width - 20, height - 20);
+    // Decorative subtle border
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(15, 15, width - 30, height - 30);
 
     // CBTIS 294 Title
     ctx.fillStyle = 'white';
-    ctx.font = 'bold 32px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('CBTIS 294', width / 2, 45);
+    ctx.textAlign = 'left';
+    ctx.font = '900 28px Arial';
+    ctx.fillText('CBTIS 294', 45, 55);
 
-    // Subtitle
-    ctx.font = '12px Arial';
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillText('Centro de Bachillerato Tecnológico Industrial y de Servicios', width / 2, 65);
+    ctx.font = 'bold 10px Arial';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.fillText('BACHILLERATO TECNOLÓGICO', 45, 72);
+
+    ctx.font = 'italic 11px Arial';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.fillText('SISTEMA DE IDENTIFICACIÓN ESCOLAR', width - 45, 60);
 
     // Main content area
-    const contentStartY = 90;
-    const contentStartX = 50;
+    const contentStartY = 110;
+    const contentStartX = 45;
 
     // Load and draw image if available
     if (alumno.fotografia) {
@@ -61,14 +65,14 @@ export async function generateCredentialImage(alumno: {
       
       img.onload = () => {
         // Image frame
-        const imgX = contentStartX + 20;
+        const imgX = contentStartX;
         const imgY = contentStartY;
-        const imgWidth = 110;
-        const imgHeight = 140;
+        const imgWidth = 130;
+        const imgHeight = 165;
 
-        // Draw white border
+        // Image background/border
         ctx.fillStyle = 'white';
-        ctx.fillRect(imgX - 3, imgY - 3, imgWidth + 6, imgHeight + 6);
+        ctx.fillRect(imgX - 2, imgY - 2, imgWidth + 4, imgHeight + 4);
 
         // Draw image with rounded corners
         ctx.save();
@@ -93,13 +97,12 @@ export async function generateCredentialImage(alumno: {
 
       img.onerror = () => {
         // If image fails to load, draw placeholder
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.fillRect(contentStartX + 20, contentStartY, 110, 140);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.fillRect(contentStartX, contentStartY, 130, 165);
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.font = '11px Arial';
+        ctx.font = 'bold 14px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('Sin', contentStartX + 75, contentStartY + 65);
-        ctx.fillText('foto', contentStartX + 75, contentStartY + 80);
+        ctx.fillText('SIN FOTO', contentStartX + 65, contentStartY + 85);
         
         drawContent();
       };
@@ -107,67 +110,75 @@ export async function generateCredentialImage(alumno: {
       img.src = alumno.fotografia;
     } else {
       // Draw placeholder
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-      ctx.fillRect(contentStartX + 20, contentStartY, 110, 140);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.fillRect(contentStartX, contentStartY, 130, 165);
       ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-      ctx.font = '11px Arial';
+      ctx.font = 'bold 14px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('Sin', contentStartX + 75, contentStartY + 65);
-      ctx.fillText('foto', contentStartX + 75, contentStartY + 80);
+      ctx.fillText('SIN FOTO', contentStartX + 65, contentStartY + 85);
       
       drawContent();
     }
 
     function drawContent() {
-      const textX = contentStartX + 150;
+      const textX = contentStartX + 165;
 
       // Name label and value
-      ctx.font = '10px Arial';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.font = 'bold 9px Arial';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
       ctx.textAlign = 'left';
-      ctx.fillText('NOMBRE:', textX, contentStartY + 15);
+      ctx.fillText('ALUMNO', textX, contentStartY + 15);
 
-      ctx.font = 'bold 16px Arial';
+      ctx.font = 'bold 24px Arial';
       ctx.fillStyle = 'white';
-      ctx.fillText(alumno.nombre.substring(0, 30), textX, contentStartY + 38);
+      ctx.fillText(alumno.nombre.toUpperCase(), textX, contentStartY + 45);
 
       // Career label and value
-      ctx.font = '10px Arial';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-      ctx.fillText('CARRERA:', textX, contentStartY + 65);
+      ctx.font = 'bold 9px Arial';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.fillText('ESPECIALIDAD', textX, contentStartY + 80);
 
-      ctx.font = 'bold 13px Arial';
+      ctx.font = 'bold 15px Arial';
       ctx.fillStyle = 'white';
-      const carrera = alumno.carrera.substring(0, 24);
-      ctx.fillText(carrera, textX, contentStartY + 85);
+      ctx.fillText(alumno.carrera.toUpperCase(), textX, contentStartY + 102);
 
-      // Grade and Group
-      ctx.font = '10px Arial';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-      ctx.fillText('GRADO:', textX, contentStartY + 112);
+      // Separator Line
+      ctx.beginPath();
+      ctx.moveTo(textX, contentStartY + 125);
+      ctx.lineTo(width - 45, contentStartY + 125);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.stroke();
 
-      ctx.font = 'bold 14px Arial';
+      // Grade and Group section
+      const sectionWidth = (width - textX - 45) / 2;
+
+      // Semester
+      ctx.font = 'bold 9px Arial';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.textAlign = 'center';
+      ctx.fillText('SEMESTRE', textX + sectionWidth / 2, contentStartY + 150);
+      ctx.font = 'bold 18px Arial';
       ctx.fillStyle = 'white';
-      ctx.fillText(alumno.grado, textX, contentStartY + 132);
+      ctx.fillText(`${alumno.grado}°`, textX + sectionWidth / 2, contentStartY + 175);
 
-      ctx.font = '10px Arial';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-      ctx.fillText('GRUPO:', textX + 80, contentStartY + 112);
-
-      ctx.font = 'bold 14px Arial';
+      // Group
+      ctx.font = 'bold 9px Arial';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.fillText('GRUPO', textX + sectionWidth + sectionWidth / 2, contentStartY + 150);
+      ctx.font = 'bold 18px Arial';
       ctx.fillStyle = 'white';
-      ctx.fillText(alumno.grupo, textX + 80, contentStartY + 132);
+      ctx.fillText(alumno.grupo, textX + sectionWidth + sectionWidth / 2, contentStartY + 175);
 
       // Footer
-      ctx.font = '11px Arial';
+      ctx.font = 'bold 11px Arial';
       ctx.fillStyle = 'white';
       ctx.textAlign = 'center';
-      ctx.fillText(`ID: ${alumno.id}`, width / 2, height - 30);
+      ctx.fillText(`ID: ${alumno.id}`, width / 2, height - 40);
 
       ctx.font = '9px Arial';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
       const currentYear = new Date().getFullYear();
-      ctx.fillText(`Válida durante el ciclo escolar ${currentYear}-${currentYear + 1}`, width / 2, height - 12);
+      ctx.fillText(`VÁLIDA DURANTE EL CICLO ESCOLAR ${currentYear}-${currentYear + 1}`, width / 2, height - 25);
 
       // Convert to blob and resolve
       canvas.toBlob((blob) => {

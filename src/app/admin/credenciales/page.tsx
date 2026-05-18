@@ -345,65 +345,81 @@ export default function CredencialesPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {alumnos.map((alumno) => (
-            <Card key={alumno.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-              <CardContent className="p-4">
-                {alumno.fotografia && (
-                  <div className="mb-4 relative w-full h-40 bg-gray-100 rounded-lg overflow-hidden">
-                    <Image
-                      src={alumno.fotografia}
-                      alt={alumno.nombre}
-                      className="w-full h-full object-cover"
-                      width={200}
-                      height={160}
-                    />
-                  </div>
-                )}
-                <div className="space-y-2 mb-4">
+            <Card key={alumno.id} className="overflow-hidden hover:shadow-xl transition-all border-none group relative">
+              <div className="bg-gradient-to-br from-[#667eea] to-[#764ba2] p-5 text-white min-h-[220px]">
+                <div className="flex justify-between items-start mb-4">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase">Nombre</p>
-                    <p className="font-bold text-sm">{alumno.nombre}</p>
+                    <h3 className="text-sm font-black tracking-tighter">CBTIS 294</h3>
+                    <p className="text-[8px] opacity-80 leading-none uppercase tracking-widest">Bachillerato Tecnológico</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase">Carrera</p>
-                    <p className="text-sm">{alumno.carrera}</p>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0 hover:bg-white/20 text-white"
+                      onClick={() => handleOpenDialog(alumno)}
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0 hover:bg-red-500/50 text-white"
+                      onClick={() => setDeleteAlumnoId(alumno.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase">Grado</p>
-                      <p className="text-sm font-semibold">{alumno.grado}</p>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="relative w-20 h-24 bg-white/20 rounded border border-white/30 overflow-hidden flex-shrink-0 shadow-inner">
+                    {alumno.fotografia ? (
+                      <Image
+                        src={alumno.fotografia}
+                        alt={alumno.nombre}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <IdCard className="h-8 w-8 text-white/30" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col justify-center min-w-0">
+                    <div className="mb-2">
+                      <p className="text-[7px] uppercase tracking-[0.2em] text-white/60 mb-0.5 font-bold">Alumno</p>
+                      <p className="font-bold text-sm truncate leading-tight uppercase">{alumno.nombre}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 uppercase">Grupo</p>
-                      <p className="text-sm font-semibold">{alumno.grupo}</p>
+                      <p className="text-[7px] uppercase tracking-[0.2em] text-white/60 mb-0.5 font-bold">Especialidad</p>
+                      <p className="text-[10px] truncate font-medium">{alumno.carrera}</p>
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 gap-1"
-                    onClick={() => generateCredentialPDF(alumno)}
-                  >
-                    <Download className="h-3 w-3" />
-                    Descargar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleOpenDialog(alumno)}
-                  >
-                    <Edit2 className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setDeleteAlumnoId(alumno.id)}
-                  >
-                    <Trash2 className="h-3 w-3 text-red-500" />
-                  </Button>
+
+                <div className="mt-4 pt-3 border-t border-white/10 grid grid-cols-2 text-center">
+                  <div className="border-r border-white/10">
+                    <p className="text-[7px] uppercase text-white/60 tracking-wider">Semestre</p>
+                    <p className="text-xs font-bold">{alumno.grado}°</p>
+                  </div>
+                  <div>
+                    <p className="text-[7px] uppercase text-white/60 tracking-wider">Grupo</p>
+                    <p className="text-xs font-bold">{alumno.grupo}</p>
+                  </div>
                 </div>
-              </CardContent>
+              </div>
+              <div className="p-3 bg-white">
+                <Button
+                  className="w-full bg-[#764ba2] hover:bg-[#667eea] text-white shadow-sm transition-colors"
+                  size="sm"
+                  onClick={() => generateCredentialPDF(alumno)}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Descargar Credencial PNG
+                </Button>
+              </div>
             </Card>
           ))}
         </div>
