@@ -1,6 +1,5 @@
 'use server';
 
-import { db } from './client';
 import { adminDb } from './admin';
 import type { Evento, Docente, Alumno } from '../types';
 
@@ -12,7 +11,7 @@ if (!globalForFirebase.mockDocentes) globalForFirebase.mockDocentes = [];
 if (!globalForFirebase.mockAlumnos) globalForFirebase.mockAlumnos = [];
 
 export async function getEvents(count?: number): Promise<Evento[]> {
-  if (!db) {
+  if (!adminDb) {
     return count ? globalForFirebase.mockEvents.slice(0, count) : globalForFirebase.mockEvents;
   }
   try {
@@ -42,7 +41,7 @@ export async function getEvents(count?: number): Promise<Evento[]> {
 }
 
 export async function getEvent(id: string): Promise<Evento | null> {
-    if (!db) return globalForFirebase.mockEvents.find(e => e.id === id) || null;
+    if (!adminDb) return globalForFirebase.mockEvents.find(e => e.id === id) || null;
     try {
         const docSnap = await adminDb.collection('events').doc(id).get();
         if (docSnap.exists) {
@@ -62,7 +61,7 @@ export async function getEvent(id: string): Promise<Evento | null> {
 }
 
 export async function addEvent(data: { title: string; description: string; imageUrl: string; }) {
-    if (!db) {
+    if (!adminDb) {
         const newEvent: Evento = {
             ...data,
             id: Math.random().toString(36).substr(2, 9),
@@ -80,7 +79,7 @@ export async function addEvent(data: { title: string; description: string; image
 }
 
 export async function updateEvent(id: string, data: { title: string; description: string; imageUrl: string; }) {
-    if (!db) {
+    if (!adminDb) {
         globalForFirebase.mockEvents = globalForFirebase.mockEvents.map(e => e.id === id ? { ...e, ...data } : e);
         return;
     }
@@ -93,7 +92,7 @@ export async function updateEvent(id: string, data: { title: string; description
 }
 
 export async function deleteEvent(id: string) {
-    if (!db) {
+    if (!adminDb) {
         globalForFirebase.mockEvents = globalForFirebase.mockEvents.filter(e => e.id !== id);
         return;
     }
@@ -106,7 +105,7 @@ export async function deleteEvent(id: string) {
 }
 
 export async function addSchedule(schedule: any) {
-    if (!db) {
+    if (!adminDb) {
         globalForFirebase.mockSchedules.push({ ...schedule, timestamp: Date.now() });
         return;
     }
@@ -118,7 +117,7 @@ export async function addSchedule(schedule: any) {
 }
 
 export async function getLatestSchedule() {
-    if (!db) {
+    if (!adminDb) {
         return globalForFirebase.mockSchedules.length > 0 ? globalForFirebase.mockSchedules[globalForFirebase.mockSchedules.length - 1] : null;
     }
     try {
@@ -134,7 +133,7 @@ export async function getLatestSchedule() {
 // --- DOCENTES CRUD ---
 
 export async function getDocentes(): Promise<Docente[]> {
-    if (!db) {
+    if (!adminDb) {
         return globalForFirebase.mockDocentes;
     }
     try {
@@ -151,7 +150,7 @@ export async function getDocentes(): Promise<Docente[]> {
 }
 
 export async function addDocente(data: Omit<Docente, 'id'>) {
-    if (!db) {
+    if (!adminDb) {
         const newDocente: Docente = {
             ...data,
             id: Math.random().toString(36).substr(2, 9),
@@ -168,7 +167,7 @@ export async function addDocente(data: Omit<Docente, 'id'>) {
 }
 
 export async function updateDocente(id: string, data: Partial<Docente>) {
-    if (!db) {
+    if (!adminDb) {
         globalForFirebase.mockDocentes = globalForFirebase.mockDocentes.map(d => d.id === id ? { ...d, ...data } : d);
         return;
     }
@@ -181,7 +180,7 @@ export async function updateDocente(id: string, data: Partial<Docente>) {
 }
 
 export async function deleteDocente(id: string) {
-    if (!db) {
+    if (!adminDb) {
         globalForFirebase.mockDocentes = globalForFirebase.mockDocentes.filter(d => d.id !== id);
         return;
     }
@@ -196,7 +195,7 @@ export async function deleteDocente(id: string) {
 // --- ALUMNOS CRUD ---
 
 export async function getAlumnos(): Promise<Alumno[]> {
-    if (!db) {
+    if (!adminDb) {
         return globalForFirebase.mockAlumnos;
     }
     try {
@@ -212,7 +211,7 @@ export async function getAlumnos(): Promise<Alumno[]> {
 }
 
 export async function addAlumno(data: Omit<Alumno, 'id'>) {
-    if (!db) {
+    if (!adminDb) {
         const newAlumno: Alumno = {
             ...data,
             id: Math.random().toString(36).substr(2, 9),
@@ -230,7 +229,7 @@ export async function addAlumno(data: Omit<Alumno, 'id'>) {
 }
 
 export async function updateAlumno(id: string, data: Partial<Alumno>) {
-    if (!db) {
+    if (!adminDb) {
         globalForFirebase.mockAlumnos = globalForFirebase.mockAlumnos.map(a => a.id === id ? { ...a, ...data } : a);
         return;
     }
@@ -243,7 +242,7 @@ export async function updateAlumno(id: string, data: Partial<Alumno>) {
 }
 
 export async function deleteAlumno(id: string) {
-    if (!db) {
+    if (!adminDb) {
         globalForFirebase.mockAlumnos = globalForFirebase.mockAlumnos.filter(a => a.id !== id);
         return;
     }
