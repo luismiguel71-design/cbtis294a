@@ -306,31 +306,27 @@ export async function addAlumnoAction(values: z.infer<typeof alumnoSchema>) {
     }
 }
 
-export async function updateAlumnoAction(id: string, values: any) {
+export async function updateAlumnoAction(id: string, values: z.infer<typeof alumnoSchema>) {
     const validatedFields = alumnoSchema.safeParse(values);
     if (!validatedFields.success) {
         const errors = validatedFields.error.flatten().fieldErrors;
         console.error("[UpdateAlumnoAction] Error de validación:", errors);
         return { error: `Datos inválidos: ${Object.keys(errors).join(', ')}` };
     }
+
     try {
-        // Extraemos los datos validados
-        const rawData = validatedFields.data;
-        const updateData: any = {};
+        // Limpiamos los datos para Firestore (evitar undefined)
+        const data = validatedFields.data;
+        const updateData = Object.fromEntries(
+            Object.entries(data).filter(([_, v]) => v !== undefined && v !== null)
+        );
 
-        // Solo incluimos campos que no sean undefined o null
-        for (const key in rawData) {
-            if (rawData[key] !== undefined && rawData[key] !== null) {
-                updateData[key] = rawData[key];
-            }
-        }
-
-        await updateAlumno(id, updateData);
+        await updateAlumno(id, updateData as any);
+        
         revalidatePath('/admin/credenciales');
         return { success: "Alumno actualizado exitosamente." };
     } catch (error: any) {
         console.error("[UpdateAlumnoAction] Error crítico:", error);
-        // Retornamos el mensaje real (ej: "Missing or insufficient permissions")
         return { error: error.message || "Error interno al actualizar en la base de datos." };
     }
 }
