@@ -114,7 +114,7 @@ export default function CredencialesPage() {
 
     const unsubscribe = getCurrentUser((user) => {
       if (user) {
-        setIsAuthenticated(true);
+        setUser(user);
         loadAlumnos();
       } else {
         router.push('/login');
@@ -122,15 +122,7 @@ export default function CredencialesPage() {
       setAuthLoading(false);
     });
 
-    // Timeout para mostrar error si la carga tarda más de 7 segundos
-    const timeout = setTimeout(() => {
-      setLoadTimeout(true);
-    }, 7000);
-
-    return () => {
-      unsubscribe();
-      clearTimeout(timeout);
-    };
+    return () => unsubscribe();
   }, [router]);
 
   const loadAlumnos = async () => {
