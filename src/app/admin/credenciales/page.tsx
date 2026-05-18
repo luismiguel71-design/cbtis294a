@@ -94,6 +94,7 @@ export default function CredencialesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteAlumnoId, setDeleteAlumnoId] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
@@ -118,17 +119,30 @@ export default function CredencialesPage() {
         router.push('/login');
       } else {
         console.log('[Credenciales] Usuario autenticado:', user);
+
+    const unsubscribe = getCurrentUser((user) => {
+      if (user) {
         setIsAuthenticated(true);
         loadAlumnos();
+      } else {
+        router.push('/login');
       }
     };
     checkAuth();
+      setAuthLoading(false);
+    });
+
     // Timeout para mostrar error si la carga tarda más de 7 segundos
     const timeout = setTimeout(() => {
       setLoadTimeout(true);
       setIsLoading(false);
     }, 7000);
     return () => clearTimeout(timeout);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [router]);
 
   const loadAlumnos = async () => {
@@ -304,6 +318,7 @@ export default function CredencialesPage() {
     );
   }
   if (!isAuthenticated) {
+  if (authLoading || !isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-center">
         <Loader2 className="h-8 w-8 animate-spin" />
