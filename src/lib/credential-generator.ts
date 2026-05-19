@@ -12,9 +12,8 @@ export async function generateCredentialImage(alumno: {
   grupo: string;
   fotografia?: string;
 }): Promise<Blob> {
-  const QRCode = require('qrcode'); // Importar la librería de QR
-
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
+    const QRCode = require('qrcode');
     const canvas = document.createElement('canvas');
     
     // Set dimensions (5x3.5 inches at 300 DPI for a standard ID card)
@@ -112,18 +111,10 @@ export async function generateCredentialImage(alumno: {
 
       img.src = alumno.fotografia;
     } else {
-      // Draw placeholder
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-      ctx.fillRect(contentStartX, contentStartY, 130, 165);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-      ctx.font = 'bold 14px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('SIN FOTO', contentStartX + 65, contentStartY + 85);
-      
       drawContent();
     }
 
-    function drawContent() {
+    async function drawContent() {
       const textX = contentStartX + 165;
 
       // Name label and value
@@ -213,41 +204,6 @@ export async function generateCredentialImage(alumno: {
           }
         }, 'image/png');
       }
-    }
-  });
-}
-
-export async function downloadCredential(alumno: {
-  id: string;
-  nombre: string;
-  carrera: string;
-  grado: string;
-  grupo: string;
-  fotografia?: string;
-}) {
-  try {
-    const blob = await generateCredentialImage(alumno);
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `credencial_${alumno.nombre.replace(/\s+/g, '_')}_${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  } catch (error) {
-    throw error;
-  }
-}
-
-      // Convert to blob and resolve
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error('Could not generate canvas blob'));
-        }
-      }, 'image/png');
     }
   });
 }

@@ -132,25 +132,6 @@ export async function getLatestSchedule() {
 
 // --- DOCENTES CRUD ---
 
-export async function getDocentes(): Promise<Docente[]> {
-    if (!adminDb) {
-        return globalForFirebase.mockDocentes;
-    }
-    try {
-        const snapshot = await adminDb.collection('docentes').get();
-        const docentes: Docente[] = [];
-        snapshot.forEach((doc) => {
-            docentes.push({ id: doc.id, ...doc.data() } as Docente);
-        });
-        return docentes;
-    } catch (error) {
-        console.error("Error getting docentes:", error);
-        return [];
-    }
-}
-
-// --- DOCENTES CRUD ---
-
 export async function getDocentes(filters?: {
     name?: string;
     specialty?: string;
@@ -204,7 +185,7 @@ export async function addDocente(data: Omit<Docente, 'id'>) {
 
 export async function updateDocente(id: string, data: Partial<Docente>) {
     if (!adminDb) {
-        globalForFirebase.mockDocentes = globalForFirebase.mockDocentes.filter(d => d.id !== id);
+        globalForFirebase.mockDocentes = globalForFirebase.mockDocentes.map(d => d.id === id ? { ...d, ...data } : d);
         return;
     }
     try {
@@ -212,21 +193,6 @@ export async function updateDocente(id: string, data: Partial<Docente>) {
     } catch (error) {
         console.error("Error deleting docente:", error);
         throw new Error("No se pudo eliminar el docente.");
-    }
-}
-
-// --- ALUMNOS CRUD ---
-
-export async function deleteDocente(id: string) {
-    if (!adminDb) {
-        globalForFirebase.mockDocentes = globalForFirebase.mockDocentes.filter(d => d.id !== id);
-        return;
-    }
-    try {
-        await adminDb.collection('docentes').doc(id).delete();
-    } catch (error) {
-        console.error("Error deleting docente:", error);
-        throw error;
     }
 }
 

@@ -1,19 +1,19 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Plus, Download, Trash2, Edit2, Upload, X, IdCard } from 'lucide-react';
-import { uploadFile } from '@/lib/firebase/storage';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import { Loader2, Download, IdCard, Search, Filter } from 'lucide-react';
 import { Alumno } from '@/lib/types';
 import Image from 'next/image';
 import { getCurrentUser } from '@/lib/firebase/auth';
 import { User } from 'firebase/auth';
 import { isFirebaseConfigured } from '@/lib/firebase/client';
-import {
 import { useToast } from '@/hooks/use-toast';
 import { getAlumnos } from '@/lib/firebase/firestore';
 import { downloadCredential } from '@/lib/credential-generator';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const CARRERAS = [
   { value: 'Inteligencia Artificial', label: 'Inteligencia Artificial' },
@@ -45,6 +45,8 @@ export default function CredencialesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCarrera, setFilterCarrera] = useState('todas');
 
   useEffect(() => {
     if (!isFirebaseConfigured) return;
@@ -258,6 +260,30 @@ export default function CredencialesPage() {
           <IdCard className="h-8 w-8 text-blue-600" />
           <h1 className="text-3xl font-bold">Generador de Credenciales</h1>
         </div>
+      </div>
+
+      <div className="mb-8 p-4 bg-muted/30 rounded-xl flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder="Buscar alumno para credencial..." 
+            className="pl-9"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Select value={filterCarrera} onValueChange={setFilterCarrera}>
+          <SelectTrigger className="w-full md:w-[250px]">
+            <Filter className="mr-2 h-4 w-4" />
+            <SelectValue placeholder="Carrera" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas las Carreras</SelectItem>
+            {CARRERAS.map(c => (
+              <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {isLoading && alumnos.length === 0 ? (

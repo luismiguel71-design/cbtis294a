@@ -3,7 +3,7 @@
 
 import { educativeChatbot } from '@/ai/flows/educative-chatbot-flow'; // Assuming this is correct
 import { z } from 'zod';
-import { addEvent, deleteEvent, updateEvent, addSchedule, getLatestSchedule, addDocente, updateDocente, deleteDocente, addAlumno, updateAlumno, deleteAlumno } from '@/lib/firebase/firestore';
+import { addEvent, deleteEvent, updateEvent, addSchedule, getLatestSchedule, addDocente, updateDocente, deleteDocente, getDocentes, addAlumno, updateAlumno, deleteAlumno } from '@/lib/firebase/firestore';
 import { signInUser } from '@/lib/firebase/auth';
 import { revalidatePath } from 'next/cache';
 import { generateSchedule, type ScheduleGeneratorInput } from '@/ai/flows/schedule-generator-flow';

@@ -73,6 +73,9 @@ export default function Header() {
               <Link href="/admin/eventos" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden md:flex")}>
                 Noticias
               </Link>
+              <Link href="/admin/alumnos" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden md:flex")}>
+                Alumnos
+              </Link>
               <Link href="/admin/docentes" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden md:flex")}>
                 Docentes
               </Link>

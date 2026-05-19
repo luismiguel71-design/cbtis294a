@@ -1,10 +1,10 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { User } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, UserPlus, Mail, Briefcase, Trash2, Edit2, Upload, X } from 'lucide-react';
+import { Loader2, UserPlus, Mail, Briefcase, Trash2, Edit2, Upload, X, Search } from 'lucide-react';
 import { uploadFile } from '@/lib/firebase/storage';
 import { getDocentes } from '@/lib/firebase/firestore';
 import { Docente } from '@/lib/types';
@@ -71,6 +71,8 @@ export default function AdminDocentesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentDocente, setCurrentDocente] = useState<Docente | null>(null);
   const [docenteToDeleteId, setDocenteToDeleteId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'activo' | 'inactivo' | 'todos'>('todos');
 
   const form = useForm<DocenteFormValues>({
     resolver: zodResolver(docenteFormSchema),
