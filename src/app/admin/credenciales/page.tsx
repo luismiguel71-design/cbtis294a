@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,55 +11,9 @@ import { getCurrentUser } from '@/lib/firebase/auth';
 import { User } from 'firebase/auth';
 import { isFirebaseConfigured } from '@/lib/firebase/client';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { addAlumnoAction, deleteAlumnoAction, updateAlumnoAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { getAlumnos } from '@/lib/firebase/firestore';
 import { downloadCredential } from '@/lib/credential-generator';
-
-const alumnoFormSchema = z.object({
-  nombre: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
-  carrera: z.string().min(1, 'La carrera es requerida.'),
-  grado: z.string().min(1, 'El grado es requerido.'),
-  grupo: z.string().min(1, 'El grupo es requerido.'),
-  fotografia: z.string().optional(),
-});
-
-type AlumnoFormValues = z.infer<typeof alumnoFormSchema>;
 
 const CARRERAS = [
   { value: 'Inteligencia Artificial', label: 'Inteligencia Artificial' },
@@ -89,25 +43,8 @@ export default function CredencialesPage() {
   const { toast } = useToast();
   const [alumnos, setAlumnos] = useState<Alumno[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [deleteAlumnoId, setDeleteAlumnoId] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
-
-  const form = useForm<AlumnoFormValues>({
-    resolver: zodResolver(alumnoFormSchema),
-    defaultValues: {
-      nombre: '',
-      carrera: '',
-      grado: '',
-      grupo: '',
-      fotografia: '',
-    },
-  });
 
   useEffect(() => {
     if (!isFirebaseConfigured) return;
@@ -321,10 +258,6 @@ export default function CredencialesPage() {
           <IdCard className="h-8 w-8 text-blue-600" />
           <h1 className="text-3xl font-bold">Generador de Credenciales</h1>
         </div>
-        <Button onClick={() => handleOpenDialog()} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Agregar Alumno
-        </Button>
       </div>
 
       {isLoading && alumnos.length === 0 ? (
@@ -335,11 +268,7 @@ export default function CredencialesPage() {
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <IdCard className="h-16 w-16 text-gray-300 mb-4" />
-            <p className="text-gray-500 text-lg mb-4">No hay alumnos registrados</p>
-            <Button onClick={() => handleOpenDialog()} variant="outline" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Crear el primero
-            </Button>
+            <p className="text-gray-500 text-lg mb-4">No hay alumnos registrados.</p>
           </CardContent>
         </Card>
       ) : (
@@ -351,24 +280,6 @@ export default function CredencialesPage() {
                   <div>
                     <h3 className="text-sm font-black tracking-tighter">CBTIS 294</h3>
                     <p className="text-[8px] opacity-80 leading-none uppercase tracking-widest">Bachillerato Tecnológico</p>
-                  </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0 hover:bg-white/20 text-white"
-                      onClick={() => handleOpenDialog(alumno)}
-                    >
-                      <Edit2 className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0 hover:bg-red-500/50 text-white"
-                      onClick={() => setDeleteAlumnoId(alumno.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
                   </div>
                 </div>
 
@@ -424,200 +335,6 @@ export default function CredencialesPage() {
           ))}
         </div>
       )}
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {isEditing ? 'Editar Alumno' : 'Agregar Nuevo Alumno'}
-            </DialogTitle>
-          </DialogHeader>
-
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="nombre"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nombre del Alumno</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Juan Pérez García" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="carrera"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Carrera</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una carrera" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {CARRERAS.map((carrera) => (
-                            <SelectItem key={carrera.value} value={carrera.value}>
-                              {carrera.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="grado"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Grado</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un grado" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {GRADOS.map((grado) => (
-                            <SelectItem key={grado.value} value={grado.value}>
-                              {grado.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="grupo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Grupo</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un grupo" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {GRUPOS.map((grupo) => (
-                            <SelectItem key={grupo.value} value={grupo.value}>
-                              {grupo.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div>
-                <FormLabel>Fotografía del Alumno</FormLabel>
-                <div className="mt-2 space-y-4">
-                  {previewImage && (
-                    <div className="relative w-32 h-40 bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-300">
-                      <Image
-                        src={previewImage}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                        width={128}
-                        height={160}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPreviewImage(null);
-                          form.setValue('fotografia', '');
-                        }}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      disabled={uploadingImage}
-                      className="flex-1"
-                    />
-                    {uploadingImage && (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Sube una fotografía del alumno (recomendado: formato retrato)
-                  </p>
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Guardando...
-                    </>
-                  ) : (
-                    isEditing ? 'Actualizar' : 'Crear Alumno'
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={!!deleteAlumnoId} onOpenChange={() => setDeleteAlumnoId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Eliminar Alumno</AlertDialogTitle>
-            <AlertDialogDescription>
-              ¿Estás seguro de que deseas eliminar este alumno? Esta acción no se puede deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Eliminando...
-                </>
-              ) : (
-                'Eliminar'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

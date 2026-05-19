@@ -149,6 +149,42 @@ export async function getDocentes(): Promise<Docente[]> {
     }
 }
 
+// --- DOCENTES CRUD ---
+
+export async function getDocentes(filters?: {
+    name?: string;
+    specialty?: string;
+    status?: 'activo' | 'inactivo';
+}): Promise<Docente[]> {
+    if (!adminDb) {
+        let filtered = globalForFirebase.mockDocentes;
+        if (filters?.name) filtered = filtered.filter(d => d.name.toLowerCase().includes(filters.name!.toLowerCase()));
+        if (filters?.specialty) filtered = filtered.filter(d => d.specialty.toLowerCase().includes(filters.specialty!.toLowerCase()));
+        if (filters?.status) filtered = filtered.filter(d => d.status === filters.status);
+        return filtered;
+    }
+    try {
+        let queryRef: FirebaseFirestore.Query = adminDb.collection('docentes');
+
+        if (filters?.specialty) queryRef = queryRef.where('specialty', '==', filters.specialty);
+        if (filters?.status) queryRef = queryRef.where('status', '==', filters.status);
+
+        const snapshot = await queryRef.get();
+        let docentes: Docente[] = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        } as Docente));
+
+        if (filters?.name) {
+            docentes = docentes.filter(d => d.name.toLowerCase().includes(filters.name!.toLowerCase()));
+        }
+        return docentes;
+    } catch (error) {
+        console.error("Error getting docentes:", error);
+        return [];
+    }
+}
+
 export async function addDocente(data: Omit<Docente, 'id'>) {
     if (!adminDb) {
         const newDocente: Docente = {
@@ -161,23 +197,25 @@ export async function addDocente(data: Omit<Docente, 'id'>) {
     try {
         await adminDb.collection('docentes').add(data);
     } catch (error) {
-        console.error("Error adding docente:", error);
-        throw new Error("No se pudo agregar el docente.");
+        console.error("Error updating docente:", error);
+        throw new Error("No se pudo actualizar el docente.");
     }
 }
 
 export async function updateDocente(id: string, data: Partial<Docente>) {
     if (!adminDb) {
-        globalForFirebase.mockDocentes = globalForFirebase.mockDocentes.map(d => d.id === id ? { ...d, ...data } : d);
+        globalForFirebase.mockDocentes = globalForFirebase.mockDocentes.filter(d => d.id !== id);
         return;
     }
     try {
         await adminDb.collection('docentes').doc(id).update(data);
     } catch (error) {
-        console.error("Error updating docente:", error);
-        throw new Error("No se pudo actualizar el docente.");
+        console.error("Error deleting docente:", error);
+        throw new Error("No se pudo eliminar el docente.");
     }
 }
+
+// --- ALUMNOS CRUD ---
 
 export async function deleteDocente(id: string) {
     if (!adminDb) {
@@ -188,22 +226,44 @@ export async function deleteDocente(id: string) {
         await adminDb.collection('docentes').doc(id).delete();
     } catch (error) {
         console.error("Error deleting docente:", error);
-        throw new Error("No se pudo eliminar el docente.");
+        throw error;
     }
 }
 
 // --- ALUMNOS CRUD ---
 
-export async function getAlumnos(): Promise<Alumno[]> {
+export async function getAlumnos(filters?: {
+    nombre?: string;
+    carrera?: string;
+    grado?: string;
+    grupo?: string;
+}): Promise<Alumno[]> {
     if (!adminDb) {
-        return globalForFirebase.mockAlumnos;
+        let filtered = globalForFirebase.mockAlumnos;
+        if (filters?.nombre) filtered = filtered.filter(a => a.nombre.toLowerCase().includes(filters.nombre!.toLowerCase()));
+        if (filters?.carrera) filtered = filtered.filter(a => a.carrera === filters.carrera);
+        if (filters?.grado) filtered = filtered.filter(a => a.grado === filters.grado);
+        if (filters?.grupo) filtered = filtered.filter(a => a.grupo === filters.grupo);
+        return filtered;
     }
     try {
-        const snapshot = await adminDb.collection('alumnos').get();
-        return snapshot.docs.map(doc => ({ 
-            id: doc.id, 
-            ...doc.data() 
+        let queryRef: FirebaseFirestore.Query = adminDb.collection('alumnos');
+
+        if (filters?.carrera) queryRef = queryRef.where('carrera', '==', filters.carrera);
+        if (filters?.grado) queryRef = queryRef.where('grado', '==', filters.grado);
+        if (filters?.grupo) queryRef = queryRef.where('grupo', '==', filters.grupo);
+
+        const snapshot = await queryRef.get();
+        let alumnos = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
         } as Alumno));
+
+        if (filters?.nombre) {
+            alumnos = alumnos.filter(a => a.nombre.toLowerCase().includes(filters.nombre!.toLowerCase()));
+        }
+
+        return alumnos;
     } catch (error) {
         console.error("Error getting alumnos:", error);
         return [];

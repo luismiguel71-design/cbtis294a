@@ -1,7 +1,7 @@
 
 'use server';
 
-import { educativeChatbot } from '@/ai/flows/educative-chatbot-flow';
+import { educativeChatbot } from '@/ai/flows/educative-chatbot-flow'; // Assuming this is correct
 import { z } from 'zod';
 import { addEvent, deleteEvent, updateEvent, addSchedule, getLatestSchedule, addDocente, updateDocente, deleteDocente, addAlumno, updateAlumno, deleteAlumno } from '@/lib/firebase/firestore';
 import { signInUser } from '@/lib/firebase/auth';
@@ -232,6 +232,20 @@ export async function addDocenteAction(values: z.infer<typeof docenteSchema>) {
         return { success: "Docente agregado exitosamente." };
     } catch (error) {
         return { error: "No se pudo agregar el docente." };
+    }
+}
+
+export async function getDocentesAction(filters?: {
+    name?: string;
+    specialty?: string;
+    status?: 'activo' | 'inactivo';
+}) {
+    try {
+        const docentes = await getDocentes(filters);
+        return { docentes };
+    } catch (error: any) {
+        console.error("Error getting docentes:", error);
+        return { error: error.message || "No se pudieron cargar los docentes." };
     }
 }
 

@@ -1,4 +1,5 @@
 /**
+ * @ts-ignore
  * Utility function to generate credential PDF using canvas
  * This provides an alternative to jspdf/html2canvas for better compatibility
  */
@@ -11,6 +12,8 @@ export async function generateCredentialImage(alumno: {
   grupo: string;
   fotografia?: string;
 }): Promise<Blob> {
+  const QRCode = require('qrcode'); // Importar la librería de QR
+
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
     
@@ -179,6 +182,63 @@ export async function generateCredentialImage(alumno: {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
       const currentYear = new Date().getFullYear();
       ctx.fillText(`VÁLIDA DURANTE EL CICLO ESCOLAR ${currentYear}-${currentYear + 1}`, width / 2, height - 25);
+
+      // --- QR Code ---
+      const qrData = `CBTIS294_ALUMNO_ID:${alumno.id}`; // Datos a codificar en el QR
+      const qrSize = 70; // Tamaño del QR
+      const qrX = width - qrSize - 20; // Posición X (derecha)
+      const qrY = height - qrSize - 20; // Posición Y (abajo)
+
+      QRCode.toDataURL(qrData, { errorCorrectionLevel: 'H', width: qrSize })
+        .then((url: string) => {
+          const qrImg = new Image();
+          qrImg.onload = () => {
+            ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+            finalizeCanvas();
+          };
+          qrImg.src = url;
+        })
+        .catch((err: any) => {
+          console.error('Error generating QR code:', err);
+          finalizeCanvas(); // Finalizar incluso si el QR falla
+        });
+
+      function finalizeCanvas() {
+        // Convert to blob and resolve
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Could not generate canvas blob'));
+          }
+        }, 'image/png');
+      }
+    }
+  });
+}
+
+export async function downloadCredential(alumno: {
+  id: string;
+  nombre: string;
+  carrera: string;
+  grado: string;
+  grupo: string;
+  fotografia?: string;
+}) {
+  try {
+    const blob = await generateCredentialImage(alumno);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `credencial_${alumno.nombre.replace(/\s+/g, '_')}_${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    throw error;
+  }
+}
 
       // Convert to blob and resolve
       canvas.toBlob((blob) => {
