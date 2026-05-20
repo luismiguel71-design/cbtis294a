@@ -132,7 +132,6 @@ export default function AlumnosPage() {
 
   const loadAlumnos = useCallback(async () => {
     try {
-      console.log('[Alumnos] Cargando alumnos...');
       setIsLoading(true);
       const data = await getAlumnos({
         nombre: searchTerm,
@@ -140,7 +139,6 @@ export default function AlumnosPage() {
         grado: filterGrado,
         grupo: filterGrupo,
       });
-      console.log('[Alumnos] Alumnos obtenidos:', data);
       setAlumnos(data);
     } catch (error) {
       console.error('[Alumnos] Error loading alumnos:', error);
@@ -150,7 +148,6 @@ export default function AlumnosPage() {
         variant: 'destructive',
       });
     } finally {
-      console.log('[Alumnos] Terminó carga de alumnos, setIsLoading(false)');
       setIsLoading(false);
     }
   }, [searchTerm, filterCarrera, filterGrado, filterGrupo, toast]);
@@ -283,9 +280,9 @@ export default function AlumnosPage() {
         <div className="mb-4">
           <Loader2 className="h-8 w-8 animate-spin text-red-500" />
         </div>
-        <h2 className="text-xl font-bold text-red-600 mb-2">[VISUAL LOG] Error de configuración de Firebase</h2>
+        <h2 className="text-xl font-bold text-red-600 mb-2">Error de configuración de Firebase</h2>
         <p className="text-gray-700">No se detectó la configuración de Firebase.<br />
-        Verifica que todas las variables de entorno de Firebase estén definidas en Vercel y vuelve a desplegar la aplicación.</p>
+        Verifica las variables de entorno en Vercel.</p>
       </div>
     );
   }
@@ -293,15 +290,7 @@ export default function AlumnosPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-center">
         <Loader2 className="h-8 w-8 animate-spin" />
-        <h2 className="text-xl font-bold text-blue-600 mt-4">[VISUAL LOG] Esperando autenticación...</h2>
-      </div>
-    );
-  }
-  if (isLoading && alumnos.length === 0 && searchTerm === '' && filterCarrera === '' && filterGrado === '' && filterGrupo === '') {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen text-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        <h2 className="text-xl font-bold text-blue-600 mt-4">[VISUAL LOG] Cargando alumnos...</h2>
+        <h2 className="text-xl font-bold text-blue-600 mt-4">Esperando autenticación...</h2>
       </div>
     );
   }
@@ -331,10 +320,10 @@ export default function AlumnosPage() {
         </div>
         <Select onValueChange={setFilterCarrera} value={filterCarrera}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filtrar por carrera" />
+            <SelectValue placeholder="Carrera" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas las Carreras</SelectItem>
+            <SelectItem value=" ">Todas las Carreras</SelectItem>
             {CARRERAS.map((carrera) => (
               <SelectItem key={carrera.value} value={carrera.value}>
                 {carrera.label}
@@ -344,10 +333,10 @@ export default function AlumnosPage() {
         </Select>
         <Select onValueChange={setFilterGrado} value={filterGrado}>
           <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Filtrar por grado" />
+            <SelectValue placeholder="Grado" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos los Grados</SelectItem>
+            <SelectItem value=" ">Todos los Grados</SelectItem>
             {GRADOS.map((grado) => (
               <SelectItem key={grado.value} value={grado.value}>
                 {grado.label}
@@ -355,283 +344,105 @@ export default function AlumnosPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select onValueChange={setFilterGrupo} value={filterGrupo}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Filtrar por grupo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">Todos los Grupos</SelectItem>
-            {GRUPOS.map((grupo) => (
-              <SelectItem key={grupo.value} value={grupo.value}>
-                {grupo.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
         <Button onClick={loadAlumnos} disabled={isLoading}>
           <Filter className="h-4 w-4 mr-2" />
-          Aplicar Filtros
-        </Button>
-        <Button variant="outline" onClick={() => {
-          setSearchTerm('');
-          setFilterCarrera('');
-          setFilterGrado('');
-          setFilterGrupo('');
-          // loadAlumnos will be called by useEffect due to state changes
-        }} disabled={isLoading}>
-          Limpiar Filtros
+          Filtrar
         </Button>
       </div>
 
-      {isLoading && alumnos.length === 0 ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        </div>
-      ) : alumnos.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <IdCard className="h-16 w-16 text-gray-300 mb-4" />
-            <p className="text-gray-500 text-lg mb-4">No hay alumnos registrados que coincidan con los filtros.</p>
-            <Button onClick={() => handleOpenDialog()} variant="outline" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Crear el primero
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {alumnos.map((alumno) => (
-            <Card key={alumno.id} className="overflow-hidden hover:shadow-xl transition-all border-none group relative">
-              <div className="bg-gradient-to-br from-[#667eea] to-[#764ba2] p-5 text-white min-h-[220px]">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-sm font-black tracking-tighter">CBTIS 294</h3>
-                    <p className="text-[8px] opacity-80 leading-none uppercase tracking-widest">Bachillerato Tecnológico</p>
-                  </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0 hover:bg-white/20 text-white"
-                      onClick={() => handleOpenDialog(alumno)}
-                    >
-                      <Edit2 className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0 hover:bg-red-500/50 text-white"
-                      onClick={() => setDeleteAlumnoId(alumno.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="relative w-20 h-24 bg-white/20 rounded border border-white/30 overflow-hidden flex-shrink-0 shadow-inner">
-                    {alumno.fotografia ? (
-                      <Image
-                        src={alumno.fotografia}
-                        alt={alumno.nombre}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <IdCard className="h-8 w-8 text-white/30" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col justify-center min-w-0">
-                    <div className="mb-2">
-                      <p className="text-[7px] uppercase tracking-[0.2em] text-white/60 mb-0.5 font-bold">Alumno</p>
-                      <p className="font-bold text-sm truncate leading-tight uppercase">{alumno.nombre}</p>
-                    </div>
-                    <div>
-                      <p className="text-[7px] uppercase tracking-[0.2em] text-white/60 mb-0.5 font-bold">Especialidad</p>
-                      <p className="text-[10px] truncate font-medium">{alumno.carrera}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-white/10 grid grid-cols-2 text-center">
-                  <div className="border-r border-white/10">
-                    <p className="text-[7px] uppercase text-white/60 tracking-wider">Semestre</p>
-                    <p className="text-xs font-bold">{alumno.grado}°</p>
-                  </div>
-                  <div>
-                    <p className="text-[7px] uppercase text-white/60 tracking-wider">Grupo</p>
-                    <p className="text-xs font-bold">{alumno.grupo}</p>
-                  </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {alumnos.map((alumno) => (
+          <Card key={alumno.id} className="overflow-hidden hover:shadow-xl transition-all border-none group relative">
+            <div className="bg-gradient-to-br from-[#667eea] to-[#764ba2] p-5 text-white min-h-[220px]">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-sm font-black tracking-tighter">CBTIS 294</h3>
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 hover:bg-white/20" onClick={() => handleOpenDialog(alumno)}>
+                    <Edit2 className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 hover:bg-red-500/50" onClick={() => setDeleteAlumnoId(alumno.id)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </div>
-            </Card>
-          ))}
-        </div>
-      )}
+
+              <div className="flex gap-4">
+                <div className="relative w-20 h-24 bg-white/20 rounded border border-white/30 overflow-hidden flex-shrink-0 shadow-inner">
+                  {alumno.fotografia ? (
+                    <Image src={alumno.fotografia} alt={alumno.nombre} fill className="object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <IdCard className="h-8 w-8 text-white/30" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col justify-center min-w-0">
+                  <p className="text-[7px] uppercase tracking-[0.2em] text-white/60 mb-0.5 font-bold">Alumno</p>
+                  <p className="font-bold text-sm truncate leading-tight uppercase">{alumno.nombre}</p>
+                  <p className="text-[7px] uppercase tracking-[0.2em] text-white/60 mt-2 mb-0.5 font-bold">Especialidad</p>
+                  <p className="text-[10px] truncate font-medium">{alumno.carrera}</p>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-white/10 grid grid-cols-2 text-center">
+                <div className="border-r border-white/10">
+                  <p className="text-[7px] uppercase text-white/60 tracking-wider">Semestre</p>
+                  <p className="text-xs font-bold">{alumno.grado}°</p>
+                </div>
+                <div>
+                  <p className="text-[7px] uppercase text-white/60 tracking-wider">Grupo</p>
+                  <p className="text-xs font-bold">{alumno.grupo}</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>
-              {isEditing ? 'Editar Alumno' : 'Agregar Nuevo Alumno'}
-            </DialogTitle>
+            <DialogTitle>{isEditing ? 'Editar Alumno' : 'Agregar Nuevo Alumno'}</DialogTitle>
           </DialogHeader>
-
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="nombre"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nombre del Alumno</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Juan Pérez García" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="carrera"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Carrera</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una carrera" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {CARRERAS.map((carrera) => (
-                            <SelectItem key={carrera.value} value={carrera.value}>
-                              {carrera.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="grado"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Grado</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un grado" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {GRADOS.map((grado) => (
-                            <SelectItem key={grado.value} value={grado.value}>
-                              {grado.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="grupo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Grupo</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un grupo" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {GRUPOS.map((grupo) => (
-                            <SelectItem key={grupo.value} value={grupo.value}>
-                              {grupo.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <FormField control={form.control} name="nombre" render={({ field }) => (
+                  <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input placeholder="Nombre completo" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="carrera" render={({ field }) => (
+                  <FormItem><FormLabel>Carrera</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger></FormControl>
+                      <SelectContent>{CARRERAS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                    </Select><FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="grado" render={({ field }) => (
+                  <FormItem><FormLabel>Grado</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger></FormControl>
+                      <SelectContent>{GRADOS.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}</SelectContent>
+                    </Select><FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="grupo" render={({ field }) => (
+                  <FormItem><FormLabel>Grupo</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger></FormControl>
+                      <SelectContent>{GRUPOS.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}</SelectContent>
+                    </Select><FormMessage />
+                  </FormItem>
+                )} />
               </div>
-
-              <div>
-                <FormLabel>Fotografía del Alumno</FormLabel>
-                <div className="mt-2 space-y-4">
-                  {previewImage && (
-                    <div className="relative w-32 h-40 bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-300">
-                      <Image
-                        src={previewImage}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                        width={128}
-                        height={160}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPreviewImage(null);
-                          form.setValue('fotografia', '');
-                        }}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      disabled={uploadingImage}
-                      className="flex-1"
-                    />
-                    {uploadingImage && (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    )}
+              <div className="space-y-2">
+                <FormLabel>Fotografía</FormLabel>
+                {previewImage && (
+                  <div className="relative w-24 h-32 mb-2"><Image src={previewImage} alt="Preview" fill className="object-cover rounded" />
+                    <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6" onClick={() => { setPreviewImage(null); form.setValue('fotografia', ''); }}><X className="h-3" /></Button>
                   </div>
-                  <p className="text-xs text-gray-500">
-                    Sube una fotografía del alumno (recomendado: formato retrato)
-                  </p>
-                </div>
+                )}
+                <Input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} />
               </div>
-
               <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Guardando...
-                    </>
-                  ) : (
-                    isEditing ? 'Actualizar' : 'Crear Alumno'
-                  )}
-                </Button>
+                <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null} Guardar</Button>
               </DialogFooter>
             </form>
           </Form>
@@ -640,27 +451,10 @@ export default function AlumnosPage() {
 
       <AlertDialog open={!!deleteAlumnoId} onOpenChange={() => setDeleteAlumnoId(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Eliminar Alumno</AlertDialogTitle>
-            <AlertDialogDescription>
-              ¿Estás seguro de que deseas eliminar este alumno? Esta acción no se puede deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>¿Eliminar alumno?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Eliminando...
-                </>
-              ) : (
-                'Eliminar'
-              )}
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600">Eliminar</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

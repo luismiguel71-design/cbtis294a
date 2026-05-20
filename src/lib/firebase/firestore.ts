@@ -196,6 +196,20 @@ export async function updateDocente(id: string, data: Partial<Docente>) {
     }
 }
 
+export async function deleteDocente(id: string) {
+    if (!adminDb) {
+        globalForFirebase.mockDocentes = globalForFirebase.mockDocentes.filter(d => d.id !== id);
+        return;
+    }
+    try {
+        await adminDb.collection('docentes').doc(id).delete();
+    } catch (error) {
+        console.error("Error deleting docente:", error);
+        throw error;
+    }
+}
+
+
 // --- ALUMNOS CRUD ---
 
 export async function getAlumnos(filters?: {
