@@ -178,8 +178,8 @@ export async function addDocente(data: Omit<Docente, 'id'>) {
     try {
         await adminDb.collection('docentes').add(data);
     } catch (error) {
-        console.error("Error updating docente:", error);
-        throw new Error("No se pudo actualizar el docente.");
+        console.error("Error adding docente:", error);
+        throw new Error("No se pudo agregar el docente.");
     }
 }
 
@@ -191,8 +191,8 @@ export async function updateDocente(id: string, data: Partial<Docente>) {
     try {
         await adminDb.collection('docentes').doc(id).update(data);
     } catch (error) {
-        console.error("Error deleting docente:", error);
-        throw new Error("No se pudo eliminar el docente.");
+        console.error("Error updating docente:", error);
+        throw new Error("No se pudo actualizar el docente.");
     }
 }
 
