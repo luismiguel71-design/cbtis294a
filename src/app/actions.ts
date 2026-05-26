@@ -308,6 +308,7 @@ export async function addAlumnoAction(values: z.infer<typeof alumnoSchema>) {
     if (!validatedFields.success) {
         return { error: "Datos inválidos." };
     }
+
     try {
         const alumnoId = await addAlumno({
             ...validatedFields.data,
@@ -321,7 +322,7 @@ export async function addAlumnoAction(values: z.infer<typeof alumnoSchema>) {
     }
 }
 
-export async function updateAlumnoAction(id: string, values: z.infer<typeof alumnoSchema>) {
+export async function updateAlumnoAction(id: string, values: any) {
     const validatedFields = alumnoSchema.safeParse(values);
     if (!validatedFields.success) {
         const errors = validatedFields.error.flatten().fieldErrors;
