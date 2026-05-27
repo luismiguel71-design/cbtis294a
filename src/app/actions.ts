@@ -314,7 +314,6 @@ export async function addAlumnoAction(values: z.infer<typeof alumnoSchema>) {
             ...validatedFields.data,
             createdAt: new Date().toISOString(),
         });
-        revalidatePath('/admin/credenciales');
         revalidatePath('/admin/alumnos');
         return { success: "Alumno agregado exitosamente.", alumnoId };
     } catch (error) {
@@ -339,7 +338,6 @@ export async function updateAlumnoAction(id: string, values: any) {
 
         await updateAlumno(id, updateData as any);
         
-        revalidatePath('/admin/credenciales');
         revalidatePath('/admin/alumnos');
         return { success: "Alumno actualizado exitosamente." };
     } catch (error: any) {
@@ -351,7 +349,6 @@ export async function updateAlumnoAction(id: string, values: any) {
 export async function deleteAlumnoAction(id: string) {
     try {
         await deleteAlumno(id);
-        revalidatePath('/admin/credenciales');
         revalidatePath('/admin/alumnos');
         return { success: "Alumno eliminado exitosamente." };
     } catch (error) {
