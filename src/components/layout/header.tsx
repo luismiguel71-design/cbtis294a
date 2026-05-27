@@ -129,6 +129,13 @@ export default function Header() {
                     Gestionar Noticias
                   </Link>
                   <Link
+                    href="/admin/alumnos"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block rounded-md px-3 py-2 text-base font-medium text-primary hover:bg-accent"
+                  >
+                    Gestionar Alumnos
+                  </Link>
+                  <Link
                     href="/admin/docentes"
                     onClick={() => setIsMenuOpen(false)}
                     className="block rounded-md px-3 py-2 text-base font-medium text-primary hover:bg-accent"

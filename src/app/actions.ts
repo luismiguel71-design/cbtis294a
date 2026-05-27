@@ -315,6 +315,7 @@ export async function addAlumnoAction(values: z.infer<typeof alumnoSchema>) {
             createdAt: new Date().toISOString(),
         });
         revalidatePath('/admin/alumnos');
+        revalidatePath('/admin/credenciales');
         return { success: "Alumno agregado exitosamente.", alumnoId };
     } catch (error) {
         return { error: "No se pudo agregar el alumno." };
@@ -339,6 +340,7 @@ export async function updateAlumnoAction(id: string, values: any) {
         await updateAlumno(id, updateData as any);
         
         revalidatePath('/admin/alumnos');
+        revalidatePath('/admin/credenciales');
         return { success: "Alumno actualizado exitosamente." };
     } catch (error: any) {
         console.error("[UpdateAlumnoAction] Error crítico:", error);
@@ -350,6 +352,7 @@ export async function deleteAlumnoAction(id: string) {
     try {
         await deleteAlumno(id);
         revalidatePath('/admin/alumnos');
+        revalidatePath('/admin/credenciales');
         return { success: "Alumno eliminado exitosamente." };
     } catch (error) {
         return { error: "No se pudo eliminar el alumno." };
