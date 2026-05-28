@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
@@ -64,142 +64,6 @@ export default function CredencialesPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const loadAlumnos = async () => {
-    try {
-      console.log('[Credenciales] Cargando alumnos...');
-      setIsLoading(true);
-      const data = await getAlumnos();
-      console.log('[Credenciales] Alumnos obtenidos:', data);
-      setAlumnos(data);
-    } catch (error) {
-      console.error('[Credenciales] Error loading alumnos:', error);
-      toast({
-        title: 'Error',
-        description: 'No se pudieron cargar los alumnos.',
-        variant: 'destructive',
-      });
-    } finally {
-      console.log('[Credenciales] Terminó carga de alumnos, setIsLoading(false)');
-      setIsLoading(false);
-    }
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setUploadingImage(true);
-      const downloadUrl = await uploadFile(file, `alumnos/${Date.now()}-${file.name}`);
-      form.setValue('fotografia', downloadUrl);
-      setPreviewImage(downloadUrl);
-      toast({
-        title: 'Éxito',
-        description: 'Imagen cargada correctamente.',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Error al cargar la imagen.',
-        variant: 'destructive',
-      });
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
-  const handleOpenDialog = (alumno?: Alumno) => {
-    if (alumno) {
-      setIsEditing(true);
-      setEditingId(alumno.id);
-      form.reset({
-        nombre: alumno.nombre,
-        carrera: alumno.carrera,
-        grado: alumno.grado,
-        grupo: alumno.grupo,
-        fotografia: alumno.fotografia || '',
-      });
-      setPreviewImage(alumno.fotografia || null);
-    } else {
-      setIsEditing(false);
-      setEditingId(null);
-      form.reset();
-      setPreviewImage(null);
-    }
-    setIsDialogOpen(true);
-  };
-
-  const onSubmit = async (values: AlumnoFormValues) => {
-    try {
-      setIsLoading(true);
-      if (isEditing && editingId) {
-        const result = await updateAlumnoAction(editingId, values);
-        if (result.error) {
-          toast({
-            title: 'Error',
-            description: result.error,
-            variant: 'destructive',
-          });
-        } else {
-          toast({
-            title: 'Éxito',
-            description: result.success,
-          });
-          setIsDialogOpen(false);
-          await loadAlumnos();
-        }
-      } else {
-        const result = await addAlumnoAction(values);
-        if (result.error) {
-          toast({
-            title: 'Error',
-            description: result.error,
-            variant: 'destructive',
-          });
-        } else {
-          toast({
-            title: 'Éxito',
-            description: result.success,
-          });
-          setIsDialogOpen(false);
-          await loadAlumnos();
-        }
-      }
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Error al procesar la solicitud.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteAlumnoId) return;
-    try {
-      setIsLoading(true);
-      const result = await deleteAlumnoAction(deleteAlumnoId);
-      if (result.error) {
-        toast({
-          title: 'Error',
-          description: result.error,
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Éxito',
-          description: result.success,
-        });
-        await loadAlumnos();
-      }
-    } finally {
-      setIsLoading(false);
-      setDeleteAlumnoId(null);
-    }
-  };
-
   const generateCredentialPDF = async (alumno: Alumno) => {
     try {
       await downloadCredential({
@@ -221,6 +85,18 @@ export default function CredencialesPage() {
         description: 'Error al generar la credencial. Intenta de nuevo.',
         variant: 'destructive',
       });
+    }
+  };
+
+  const loadAlumnos = async () => {
+    try {
+      setIsLoading(true);
+      const data = await getAlumnos();
+      setAlumnos(data);
+    } catch (error) {
+      toast({ title: 'Error', description: 'No se pudieron cargar los alumnos.', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
     }
   };
 
